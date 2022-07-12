@@ -26,8 +26,12 @@ export interface actionResource {
     resource: string;
 }
 
+const getBulkPermissionFromBE = async (url: string, user: string, actionsResourcesList: actionResource[]): Promise<boolean[]> => {
+    return await axios.post(`${url}?user=${user}`,actionsResourcesList).then(response => {
+        return response.data;
+   });
+}
 const getPermissionFromBE = async (url: string, user: string, action: string, resource: string, defaultPermission: boolean): Promise<boolean> => {
-    console.warn(`Getting permission from backend: ${url}/${user}/${action}/${resource}`);
     return await axios.get(`${url}?user=${user}&action=${action}&resource=${resource}`).then(response => {
         return response.data.permitted;
     }
@@ -41,8 +45,8 @@ const getPermissionFromBE = async (url: string, user: string, action: string, re
 }
 
 const generateStateKey = (action: string, resource: string) => `action:${action};resource:${resource}`;
-const permitState: PermitState = {};
-export let permitPermissionState: PermitCheck;
+const permitLocalState: PermitState = {};
+export let permitState: PermitCheck;
 export let permitCaslState: CaslPermissionInstance[] = [];
 
 var isInitilized = false;
@@ -62,8 +66,22 @@ export const PermitInit = (actor: string, checkUrl: string, defaultAnswerIfNotEx
             isInitilized = true;
             for (const actionResource of actionsResourcesList) {
                 const key = generateStateKey(actionResource.action, actionResource.resource);
-                permitState[key] = await getPermissionFromBE(checkUrl, actor, actionResource.action, actionResource.resource, defaultAnswerIfNotExist);
-                permitCaslState.push({action: actionResource.action, subject: actionResource.resource, inverted: !permitState[key]});
+                permitLocalState[key] = await getPermissionFromBE(checkUrl, actor, actionResource.action, actionResource.resource, defaultAnswerIfNotExist);
+                permitCaslState.push({action: actionResource.action, subject: actionResource.resource, inverted: !permitLocalState[key]});
+            }
+        }
+    }
+
+    const loadLocalStateBulk = async (actionsResourcesList: actionResource[]) => {
+        if (!isInitilized){
+            isInitilized = true;
+            const permittedList = await getBulkPermissionFromBE(checkUrl, actor, actionsResourcesList);
+            let i = 0;
+            for (const actionResource of actionsResourcesList) {
+                const key = generateStateKey(actionResource.action, actionResource.resource);
+                permitLocalState[key] = permittedList[i];
+                i=i+1;
+                permitCaslState.push({action: actionResource.action, subject: actionResource.resource, inverted: !permitLocalState[key]});
             }
         }
     }
@@ -74,8 +92,8 @@ export const PermitInit = (actor: string, checkUrl: string, defaultAnswerIfNotEx
 
     const check = (action: string, resource: string) => {
         const key = generateStateKey(action, resource);
-        if (permitState[key]) {
-            return permitState[key];
+        if (permitLocalState[key]) {
+            return permitLocalState[key];
         } else {
             return defaultAnswerIfNotExist;
         }
@@ -83,21 +101,22 @@ export const PermitInit = (actor: string, checkUrl: string, defaultAnswerIfNotEx
 
     const addKeyToState = async (action: string, resource: string) => {
         const key = generateStateKey(action, resource);
-        permitState[key] = await getPermissionFromBE(checkUrl, actor, action, resource, defaultAnswerIfNotExist);
+        permitLocalState[key] = await getPermissionFromBE(checkUrl, actor, action, resource, defaultAnswerIfNotExist);
+        permitCaslState.push({action: action, subject: resource, inverted: !permitLocalState[key]});
     }
 
 
-    permitPermissionState = {
+    permitState = {
         addKeyToState: addKeyToState,
         loadLocalState: loadLocalState,
         actor,
         checkUrl,
         defaultAnswerIfNotExist,
-        state: permitState,
+        state: permitLocalState,
         check: check,
         getCaslJson: getCaslJson,
     };
-    return permitPermissionState;
+    return permitState;
 }
 
 
