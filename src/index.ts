@@ -6,6 +6,15 @@ export interface PermitCheck {
     checkUrl: string;
     defaultAnswerIfNotExist: boolean;
     state: PermitState;
+    addKeyToState: Function;
+    loadLocalState: Function;
+    getCaslJson: Function;
+}
+
+export interface CaslPermissionInstance {
+    action: string;
+    subject: string;
+    inverted: boolean; // if true, the permission is denied
 }
 
 export interface PermitState {
@@ -17,29 +26,29 @@ export interface actionResource {
     resource: string;
 }
 
-declare global {
-    interface Window { permit: PermitCheck; }
-}
-
-export const loadLocalState = async (actorsResourcesList: actionResource[]) => {
-    const state: PermitState = {};
-    await actorsResourcesList.forEach(async actionResource => {
-        await axios.get(`${window.permit.checkUrl}?action=${actionResource.action}&resource=${actionResource.resource}`).then(response => {
-            const key = generateStateKey(actionResource.action, actionResource.resource);
-            state[key] = response.data;
+const getPermissionFromBE = async (url: string, user: string, action: string, resource: string, defaultPermission: boolean): Promise<boolean> => {
+    console.warn(`Getting permission from backend: ${url}/${user}/${action}/${resource}`);
+    return await axios.get(`${url}?user=${user}&action=${action}&resource=${resource}`).then(response => {
+        return response.data.permitted;
+    }
+    ).catch(error => {
+        if (error.response.status === 403) {
+            return false;
         }
-        ).catch(error => {
-            console.log(error);
-
-        });
-        return state;
-
+        console.error(error);
+        return defaultPermission;
     });
 }
 
-export const generateStateKey = (action: string, resource: string) => `action:${action};resource:${resource}`;
+const generateStateKey = (action: string, resource: string) => `action:${action};resource:${resource}`;
+const permitState: PermitState = {};
+export let permitPermissionState: PermitCheck;
+export let permitCaslState: CaslPermissionInstance[] = [];
+
+var isInitilized = false;
 
 export const PermitInit = (actor: string, checkUrl: string, defaultAnswerIfNotExist: boolean = false) => {
+    
     if (!actor) {
         throw new Error('actor is required');
     }
@@ -47,26 +56,48 @@ export const PermitInit = (actor: string, checkUrl: string, defaultAnswerIfNotEx
         throw new Error('checkUrl is required, put your backend check url here');
     }
 
-    const check = (action: string, resource: string) => {
-        const key = generateStateKey(action, resource);
-        if (permit.state[key]) {
-            return permit.state[key];
-        } else {
-            return permit.defaultAnswerIfNotExist;
+
+    const loadLocalState = async (actionsResourcesList: actionResource[]) => {
+        if (!isInitilized){
+            isInitilized = true;
+            for (const actionResource of actionsResourcesList) {
+                const key = generateStateKey(actionResource.action, actionResource.resource);
+                permitState[key] = await getPermissionFromBE(checkUrl, actor, actionResource.action, actionResource.resource, defaultAnswerIfNotExist);
+                permitCaslState.push({action: actionResource.action, subject: actionResource.resource, inverted: !permitState[key]});
+            }
         }
     }
 
-    const state: PermitState = {};
+    const getCaslJson = () => {
+        return permitCaslState;
+    }
 
-    const permit = {
+    const check = (action: string, resource: string) => {
+        const key = generateStateKey(action, resource);
+        if (permitState[key]) {
+            return permitState[key];
+        } else {
+            return defaultAnswerIfNotExist;
+        }
+    }
+
+    const addKeyToState = async (action: string, resource: string) => {
+        const key = generateStateKey(action, resource);
+        permitState[key] = await getPermissionFromBE(checkUrl, actor, action, resource, defaultAnswerIfNotExist);
+    }
+
+
+    permitPermissionState = {
+        addKeyToState: addKeyToState,
+        loadLocalState: loadLocalState,
         actor,
         checkUrl,
         defaultAnswerIfNotExist,
-        state: state,
+        state: permitState,
         check: check,
+        getCaslJson: getCaslJson,
     };
-    window.permit = permit;
-    return permit;
+    return permitPermissionState;
 }
 
 
