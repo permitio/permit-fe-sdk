@@ -1,55 +1,13 @@
-import axios from 'axios';
+import { generateStateKey, getPermissionFromBE, getBulkPermissionFromBE } from './main';
+import { actionResource, PermitStateSchema, PermitCheck, CaslPermissionInstance } from './schema';
 
-export interface PermitCheck {
-    check: Function;
-    actor: string;
-    checkUrl: string;
-    defaultAnswerIfNotExist: boolean;
-    state: PermitState;
-    addKeyToState: Function;
-    loadLocalState: Function;
-    getCaslJson: Function;
-}
 
-export interface CaslPermissionInstance {
-    action: string;
-    subject: string;
-    inverted: boolean; // if true, the permission is denied
-}
 
-export interface PermitState {
-    [key: string]: boolean;
-}
-
-export interface actionResource {
-    action: string;
-    resource: string;
-}
-
-const getBulkPermissionFromBE = async (url: string, user: string, actionsResourcesList: actionResource[]): Promise<boolean[]> => {
-    return await axios.post(`${url}?user=${user}`,actionsResourcesList).then(response => {
-        return response.data;
-   });
-}
-const getPermissionFromBE = async (url: string, user: string, action: string, resource: string, defaultPermission: boolean): Promise<boolean> => {
-    return await axios.get(`${url}?user=${user}&action=${action}&resource=${resource}`).then(response => {
-        return response.data.permitted;
-    }
-    ).catch(error => {
-        if (error.response.status === 403) {
-            return false;
-        }
-        console.error(error);
-        return defaultPermission;
-    });
-}
-
-const generateStateKey = (action: string, resource: string) => `action:${action};resource:${resource}`;
-const permitLocalState: PermitState = {};
+const permitLocalState: PermitStateSchema = {};
 export let permitState: PermitCheck;
 export let permitCaslState: CaslPermissionInstance[] = [];
 
-var isInitilized = false;
+let isInitilized = false;
 
 export const PermitInit = (actor: string, checkUrl: string, defaultAnswerIfNotExist: boolean = false) => {
     
@@ -109,6 +67,7 @@ export const PermitInit = (actor: string, checkUrl: string, defaultAnswerIfNotEx
     permitState = {
         addKeyToState: addKeyToState,
         loadLocalState: loadLocalState,
+        loadLocalStateBulk: loadLocalStateBulk,
         actor,
         checkUrl,
         defaultAnswerIfNotExist,
