@@ -1,4 +1,4 @@
-import { generateStateKey } from "../main";
+import { generateStateKey } from "../service";
 
 
 test('generate state key', () => {

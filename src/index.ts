@@ -1,11 +1,11 @@
-import { generateStateKey, getPermissionFromBE, getBulkPermissionFromBE } from './main';
-import { actionResource, PermitStateSchema, PermitCheck, CaslPermissionInstance } from './schema';
+import { generateStateKey, getPermissionFromBE, getBulkPermissionFromBE } from './service';
+import { ActionResourceSchema, PermitStateSchema, PermitCheckSchema, CaslPermissionSchema } from './types';
 
 
 
 const permitLocalState: PermitStateSchema = {};
-export let permitState: PermitCheck;
-export let permitCaslState: CaslPermissionInstance[] = [];
+export let permitState: PermitCheckSchema;
+export let permitCaslState: CaslPermissionSchema[] = [];
 
 let isInitilized = false;
 
@@ -19,7 +19,7 @@ export const PermitInit = (actor: string, checkUrl: string, defaultAnswerIfNotEx
     }
 
 
-    const loadLocalState = async (actionsResourcesList: actionResource[]) => {
+    const loadLocalState = async (actionsResourcesList: ActionResourceSchema[]) => {
         if (!isInitilized){
             isInitilized = true;
             for (const actionResource of actionsResourcesList) {
@@ -30,7 +30,7 @@ export const PermitInit = (actor: string, checkUrl: string, defaultAnswerIfNotEx
         }
     }
 
-    const loadLocalStateBulk = async (actionsResourcesList: actionResource[]) => {
+    const loadLocalStateBulk = async (actionsResourcesList: ActionResourceSchema[]) => {
         if (!isInitilized){
             isInitilized = true;
             const permittedList = await getBulkPermissionFromBE(checkUrl, actor, actionsResourcesList);
@@ -60,20 +60,20 @@ export const PermitInit = (actor: string, checkUrl: string, defaultAnswerIfNotEx
     const addKeyToState = async (action: string, resource: string) => {
         const key = generateStateKey(action, resource);
         permitLocalState[key] = await getPermissionFromBE(checkUrl, actor, action, resource, defaultAnswerIfNotExist);
-        permitCaslState.push({action: action, subject: resource, inverted: !permitLocalState[key]});
+        permitCaslState.push({action, subject: resource, inverted: !permitLocalState[key]});
     }
 
 
     permitState = {
-        addKeyToState: addKeyToState,
-        loadLocalState: loadLocalState,
-        loadLocalStateBulk: loadLocalStateBulk,
+        addKeyToState,
+        loadLocalState,
+        loadLocalStateBulk,
         actor,
         checkUrl,
         defaultAnswerIfNotExist,
         state: permitLocalState,
-        check: check,
-        getCaslJson: getCaslJson,
+        check,
+        getCaslJson,
     };
     return permitState;
 }

@@ -1,16 +1,16 @@
-export interface PermitCheck {
-    check: Function;
+export interface PermitCheckSchema {
     actor: string;
     checkUrl: string;
     defaultAnswerIfNotExist: boolean;
     state: PermitStateSchema;
-    addKeyToState: Function;
-    loadLocalState: Function;
-    getCaslJson: Function;
-    loadLocalStateBulk: Function;
+    check: (action: string, resource: string)=>boolean;
+    addKeyToState: (action: string, resource: string)=>Promise<void>;
+    loadLocalState: (actionsResourcesList: ActionResourceSchema[])=>Promise<void>;
+    getCaslJson: ()=>CaslPermissionSchema[];
+    loadLocalStateBulk: (actionsResourcesList: ActionResourceSchema[])=>Promise<void>;
 }
 
-export interface CaslPermissionInstance {
+export interface CaslPermissionSchema {
     action: string;
     subject: string;
     inverted: boolean; // if true, the permission is denied
@@ -20,7 +20,7 @@ export interface PermitStateSchema {
     [key: string]: boolean;
 }
 
-export interface actionResource {
+export interface ActionResourceSchema {
     action: string;
     resource: string;
 }

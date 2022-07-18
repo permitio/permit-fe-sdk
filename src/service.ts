@@ -1,7 +1,7 @@
 import axios from 'axios';
-import { actionResource } from './schema';
+import { ActionResourceSchema } from './types';
 
-export const getBulkPermissionFromBE = async (url: string, user: string, actionsResourcesList: actionResource[]): Promise<boolean[]> => {
+export const getBulkPermissionFromBE = async (url: string, user: string, actionsResourcesList: ActionResourceSchema[]): Promise<boolean[]> => {
     return await axios.post(`${url}?user=${user}`,actionsResourcesList).then(response => {
         return response.data;
    });
@@ -14,6 +14,7 @@ export const getPermissionFromBE = async (url: string, user: string, action: str
         if (error.response.status === 403) {
             return false;
         }
+        // tslint:disable-next-line:no-console
         console.error(error);
         return defaultPermission;
     });
