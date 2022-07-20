@@ -1,8 +1,51 @@
-import { generateStateKey, getPermissionFromBE, getBulkPermissionFromBE } from './service';
-import { ActionResourceSchema, PermitStateSchema, PermitCheckSchema, CaslPermissionSchema } from './types';
+import axios from 'axios';
+export interface PermitCheckSchema {
+    actor: string;
+    checkUrl: string;
+    defaultAnswerIfNotExist: boolean;
+    state: PermitStateSchema;
+    check: (action: string, resource: string)=>boolean;
+    addKeyToState: (action: string, resource: string)=>Promise<void>;
+    loadLocalState: (actionsResourcesList: ActionResourceSchema[])=>Promise<void>;
+    getCaslJson: ()=>CaslPermissionSchema[];
+    loadLocalStateBulk: (actionsResourcesList: ActionResourceSchema[])=>Promise<void>;
+}
 
+export interface CaslPermissionSchema {
+    action: string;
+    subject: string;
+    inverted: boolean; // if true, the permission is denied
+}
 
+export interface PermitStateSchema {
+    [key: string]: boolean;
+}
 
+export interface ActionResourceSchema {
+    action: string;
+    resource: string;
+}
+
+const getBulkPermissionFromBE = async (url: string, user: string, actionsResourcesList: ActionResourceSchema[]): Promise<boolean[]> => {
+    return await axios.post(`${url}?user=${user}`,{resourcesAndActions:actionsResourcesList}).then(response => {
+        return response.data.permittedList;
+   });
+}
+const getPermissionFromBE = async (url: string, user: string, action: string, resource: string, defaultPermission: boolean): Promise<boolean> => {
+    return await axios.get(`${url}?user=${user}&action=${action}&resource=${resource}`).then(response => {
+        return response.data.permitted;
+    }
+    ).catch(error => {
+        if (error.response.status === 403) {
+            return false;
+        }
+        // tslint:disable-next-line:no-console
+        console.error(error);
+        return defaultPermission;
+    });
+}
+
+const generateStateKey = (action: string, resource: string) => `action:${action};resource:${resource}`;
 const permitLocalState: PermitStateSchema = {};
 export let permitState: PermitCheckSchema;
 export let permitCaslState: CaslPermissionSchema[] = [];
