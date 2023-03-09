@@ -1,7 +1,7 @@
 import axios from 'axios';
 export interface PermitCheckSchema {
-    actor: string;
-    checkUrl: string;
+    loggedInUser: string;
+    backendUrl: string;
     defaultAnswerIfNotExist: boolean;
     state: PermitStateSchema;
     check: (action: string, resource: string)=>boolean;
@@ -52,13 +52,19 @@ export let permitCaslState: CaslPermissionSchema[] = [];
 
 let isInitilized = false;
 
-export const PermitInit = (actor: string, checkUrl: string, defaultAnswerIfNotExist: boolean = false) => {
+export type PermitProps = {
+    loggedInUser: string;
+    backendUrl: string;
+    defaultAnswerIfNotExist?: boolean;
+}
+
+export const Permit = ({loggedInUser, backendUrl, defaultAnswerIfNotExist=false}: PermitProps) => {
     
-    if (!actor) {
-        throw new Error('actor is required');
+    if (!loggedInUser) {
+        throw new Error('loggedInUser is required');
     }
-    if (!checkUrl || typeof checkUrl !== 'string') {
-        throw new Error('checkUrl is required, put your backend check url here');
+    if (!backendUrl || typeof backendUrl !== 'string') {
+        throw new Error('backendUrl is required, put your backend check url here');
     }
 
 
@@ -67,7 +73,7 @@ export const PermitInit = (actor: string, checkUrl: string, defaultAnswerIfNotEx
             isInitilized = true;
             for (const actionResource of actionsResourcesList) {
                 const key = generateStateKey(actionResource.action, actionResource.resource);
-                permitLocalState[key] = await getPermissionFromBE(checkUrl, actor, actionResource.action, actionResource.resource, defaultAnswerIfNotExist);
+                permitLocalState[key] = await getPermissionFromBE(backendUrl, loggedInUser, actionResource.action, actionResource.resource, defaultAnswerIfNotExist);
                 permitCaslState.push({action: actionResource.action, subject: actionResource.resource, inverted: !permitLocalState[key]});
             }
         }
@@ -76,7 +82,7 @@ export const PermitInit = (actor: string, checkUrl: string, defaultAnswerIfNotEx
     const loadLocalStateBulk = async (actionsResourcesList: ActionResourceSchema[]) => {
         if (!isInitilized){
             isInitilized = true;
-            const permittedList = await getBulkPermissionFromBE(checkUrl, actor, actionsResourcesList);
+            const permittedList = await getBulkPermissionFromBE(backendUrl, loggedInUser, actionsResourcesList);
             let i = 0;
             for (const actionResource of actionsResourcesList) {
                 const key = generateStateKey(actionResource.action, actionResource.resource);
@@ -88,6 +94,7 @@ export const PermitInit = (actor: string, checkUrl: string, defaultAnswerIfNotEx
     }
 
     const getCaslJson = () => {
+        console.log(permitCaslState);
         return permitCaslState;
     }
 
@@ -102,7 +109,7 @@ export const PermitInit = (actor: string, checkUrl: string, defaultAnswerIfNotEx
 
     const addKeyToState = async (action: string, resource: string) => {
         const key = generateStateKey(action, resource);
-        permitLocalState[key] = await getPermissionFromBE(checkUrl, actor, action, resource, defaultAnswerIfNotExist);
+        permitLocalState[key] = await getPermissionFromBE(backendUrl, loggedInUser, action, resource, defaultAnswerIfNotExist);
         permitCaslState.push({action, subject: resource, inverted: !permitLocalState[key]});
     }
 
@@ -111,8 +118,8 @@ export const PermitInit = (actor: string, checkUrl: string, defaultAnswerIfNotEx
         addKeyToState,
         loadLocalState,
         loadLocalStateBulk,
-        actor,
-        checkUrl,
+        loggedInUser,
+        backendUrl,
         defaultAnswerIfNotExist,
         state: permitLocalState,
         check,
