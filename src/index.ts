@@ -28,12 +28,7 @@ export interface ActionResourceSchema {
   attributes?: Record<string, any>;
 }
 
-const getBulkPermissionFromBE = async (
-  url: string,
-  user: string,
-  actionsResourcesList: ActionResourceSchema[],
-  attributes: Record<string, any> = {},
-): Promise<boolean[]> => {
+const getBulkPermissionFromBE = async (url: string, user: string, actionsResourcesList: ActionResourceSchema[]): Promise<boolean[]> => {
   const payload = actionsResourcesList.map((actionResource) => {
     return {
       action: actionResource.action,
