@@ -58,12 +58,5 @@ describe('Permission Service', () => {
       expect(mockedAxios.get).toHaveBeenCalledWith('http://example.com?user=user1&action=read&resource=file');
       expect(result).toBe(true);
     });
-
-    it('should send request with attributes', async () => {
-      mockedAxios.get.mockResolvedValueOnce({ data: { permitted: false } });
-      const result = await getPermissionFromBE('http://example.com', 'user1', 'read', 'file', true, { attr1: 'value1' });
-      expect(mockedAxios.get).toHaveBeenCalledWith('http://example.com?user=user1&action=read&resource=file&attributes={"attr1":"value1"}');
-      expect(result).toBe(false);
-    });
   });
 });

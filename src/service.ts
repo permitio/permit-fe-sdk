@@ -12,17 +12,9 @@ export const getBulkPermissionFromBE = async (url: string, user: string, actions
   });
 };
 
-export const getPermissionFromBE = async (
-  url: string,
-  user: string,
-  action: string,
-  resource: string,
-  defaultPermission: boolean,
-  attributes: Record<string, any> = {},
-): Promise<boolean> => {
-  const attributeQuery = attributes && Object.keys(attributes).length > 0 ? `&attributes=${JSON.stringify(attributes)}` : '';
+export const getPermissionFromBE = async (url: string, user: string, action: string, resource: string, defaultPermission: boolean): Promise<boolean> => {
   return await axios
-    .get(`${url}?user=${user}&action=${action}&resource=${resource}${attributeQuery}`)
+    .get(`${url}?user=${user}&action=${action}&resource=${resource}`)
     .then((response) => {
       return response.data.permitted;
     })
@@ -37,6 +29,12 @@ export const getPermissionFromBE = async (
 };
 
 export const generateStateKey = (action: string, resource: string, attributes: Record<string, any> = {}) => {
-  const attributeKey = attributes && Object.keys(attributes).length > 0 ? `;attributes:${JSON.stringify(attributes)}` : '';
+  const sortedAttributes = Object.keys(attributes)
+    .sort()
+    .reduce((obj, key) => {
+      obj[key] = attributes[key];
+      return obj;
+    }, {} as Record<string, any>);
+  const attributeKey = attributes && Object.keys(attributes).length > 0 ? `;attributes:${JSON.stringify(sortedAttributes)}` : '';
   return `action:${action};resource:${resource}${attributeKey}`;
 };

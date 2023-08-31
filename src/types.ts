@@ -3,8 +3,8 @@ export interface PermitCheckSchema {
   backendUrl: string;
   defaultAnswerIfNotExist: boolean;
   state: PermitStateSchema;
-  check: (action: string, resource: string, attributes?: Record<string, any>) => boolean; // Added attributes
-  addKeyToState: (action: string, resource: string, attributes?: Record<string, any>) => Promise<void>; // Added attributes
+  check: (action: string, resource: string, resource_attributes?: Record<string, any>) => boolean;
+  addKeyToState: (action: string, resource: string, resource_attributes?: Record<string, any>) => Promise<void>;
   loadLocalState: (actionsResourcesList: ActionResourceSchema[]) => Promise<void>;
   getCaslJson: () => CaslPermissionSchema[];
   loadLocalStateBulk: (actionsResourcesList: ActionResourceSchema[]) => Promise<void>;
@@ -13,7 +13,7 @@ export interface PermitCheckSchema {
 export interface CaslPermissionSchema {
   action: string;
   subject: string;
-  inverted: boolean; // if true, the permission is denied
+  inverted: boolean;
 }
 
 export interface PermitStateSchema {

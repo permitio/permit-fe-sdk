@@ -4,8 +4,8 @@ export interface PermitCheckSchema {
   backendUrl: string;
   defaultAnswerIfNotExist: boolean;
   state: PermitStateSchema;
-  check: (action: string, resource: string, attributes?: Record<string, any>) => boolean; // Added attributes
-  addKeyToState: (action: string, resource: string, attributes?: Record<string, any>) => Promise<void>; // Added attributes
+  check: (action: string, resource: string, resource_attributes?: Record<string, any>) => boolean;
+  addKeyToState: (action: string, resource: string, resource_attributes?: Record<string, any>) => Promise<void>;
   loadLocalState: (actionsResourcesList: ActionResourceSchema[]) => Promise<void>;
   getCaslJson: () => CaslPermissionSchema[];
   loadLocalStateBulk: (actionsResourcesList: ActionResourceSchema[]) => Promise<void>;
@@ -14,7 +14,7 @@ export interface PermitCheckSchema {
 export interface CaslPermissionSchema {
   action: string;
   subject: string;
-  inverted: boolean; // if true, the permission is denied
+  inverted: boolean;
 }
 
 export interface PermitStateSchema {
@@ -40,17 +40,9 @@ const getBulkPermissionFromBE = async (url: string, user: string, actionsResourc
     return response.data.permittedList;
   });
 };
-const getPermissionFromBE = async (
-  url: string,
-  user: string,
-  action: string,
-  resource: string,
-  defaultPermission: boolean,
-  attributes: Record<string, any> = {},
-): Promise<boolean> => {
-  const attributeQuery = attributes && Object.keys(attributes).length > 0 ? `&attributes=${JSON.stringify(attributes)}` : '';
+const getPermissionFromBE = async (url: string, user: string, action: string, resource: string, defaultPermission: boolean): Promise<boolean> => {
   return await axios
-    .get(`${url}?user=${user}&action=${action}&resource=${resource}${attributeQuery}`)
+    .get(`${url}?user=${user}&action=${action}&resource=${resource}`)
     .then((response) => {
       return response.data.permitted;
     })
@@ -65,7 +57,13 @@ const getPermissionFromBE = async (
 };
 
 const generateStateKey = (action: string, resource: string, attributes: Record<string, any> = {}) => {
-  const attributeKey = attributes && Object.keys(attributes).length > 0 ? `;attributes:${JSON.stringify(attributes)}` : '';
+  const sortedAttributes = Object.keys(attributes)
+    .sort()
+    .reduce((obj, key) => {
+      obj[key] = attributes[key];
+      return obj;
+    }, {} as Record<string, any>);
+  const attributeKey = attributes && Object.keys(attributes).length > 0 ? `;attributes:${JSON.stringify(sortedAttributes)}` : '';
   return `action:${action};resource:${resource}${attributeKey}`;
 };
 const permitLocalState: PermitStateSchema = {};
@@ -93,14 +91,7 @@ export const Permit = ({ loggedInUser, backendUrl, defaultAnswerIfNotExist = fal
       isInitilized = true;
       for (const actionResource of actionsResourcesList) {
         const key = generateStateKey(actionResource.action, actionResource.resource, actionResource.attributes);
-        permitLocalState[key] = await getPermissionFromBE(
-          backendUrl,
-          loggedInUser,
-          actionResource.action,
-          actionResource.resource,
-          defaultAnswerIfNotExist,
-          actionResource.attributes,
-        );
+        permitLocalState[key] = await getPermissionFromBE(backendUrl, loggedInUser, actionResource.action, actionResource.resource, defaultAnswerIfNotExist);
         permitCaslState.push({ action: actionResource.action, subject: actionResource.resource, inverted: !permitLocalState[key] });
       }
     }
@@ -136,7 +127,7 @@ export const Permit = ({ loggedInUser, backendUrl, defaultAnswerIfNotExist = fal
 
   const addKeyToState = async (action: string, resource: string, attributes: Record<string, any> = {}) => {
     const key = generateStateKey(action, resource, attributes);
-    permitLocalState[key] = await getPermissionFromBE(backendUrl, loggedInUser, action, resource, defaultAnswerIfNotExist, attributes || {});
+    permitLocalState[key] = await getPermissionFromBE(backendUrl, loggedInUser, action, resource, defaultAnswerIfNotExist);
     permitCaslState.push({ action, subject: resource, inverted: !permitLocalState[key] });
   };
 
