@@ -25,7 +25,7 @@ export interface ActionResourceSchema {
   action: string;
   resource: string;
 
-  attributes?: Record<string, any>;
+  rsource_attributes?: Record<string, any>;
 }
 
 const getBulkPermissionFromBE = async (url: string, user: string, actionsResourcesList: ActionResourceSchema[]): Promise<boolean[]> => {
@@ -33,7 +33,7 @@ const getBulkPermissionFromBE = async (url: string, user: string, actionsResourc
     return {
       action: actionResource.action,
       resource: actionResource.resource,
-      attributes: actionResource.attributes || {},
+      attributes: actionResource.rsource_attributes || {},
     };
   });
   return await axios.post(`${url}?user=${user}`, { resourcesAndActions: payload }).then((response) => {
@@ -90,7 +90,7 @@ export const Permit = ({ loggedInUser, backendUrl, defaultAnswerIfNotExist = fal
     if (!isInitilized) {
       isInitilized = true;
       for (const actionResource of actionsResourcesList) {
-        const key = generateStateKey(actionResource.action, actionResource.resource, actionResource.attributes);
+        const key = generateStateKey(actionResource.action, actionResource.resource, actionResource.rsource_attributes);
         permitLocalState[key] = await getPermissionFromBE(backendUrl, loggedInUser, actionResource.action, actionResource.resource, defaultAnswerIfNotExist);
         permitCaslState.push({ action: actionResource.action, subject: actionResource.resource, inverted: !permitLocalState[key] });
       }
@@ -103,7 +103,7 @@ export const Permit = ({ loggedInUser, backendUrl, defaultAnswerIfNotExist = fal
       const permittedList = await getBulkPermissionFromBE(backendUrl, loggedInUser, actionsResourcesList);
       let i = 0;
       for (const actionResource of actionsResourcesList) {
-        const key = generateStateKey(actionResource.action, actionResource.resource, actionResource.attributes);
+        const key = generateStateKey(actionResource.action, actionResource.resource, actionResource.rsource_attributes);
         permitLocalState[key] = permittedList[i];
         i = i + 1;
         permitCaslState.push({ action: actionResource.action, subject: actionResource.resource, inverted: !permitLocalState[key] });

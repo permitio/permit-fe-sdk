@@ -24,5 +24,5 @@ export interface ActionResourceSchema {
   action: string;
   resource: string;
 
-  attributes?: Record<string, any>;
+  rsource_attributes?: Record<string, any>;
 }
