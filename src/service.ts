@@ -5,7 +5,7 @@ export const getBulkPermissionFromBE = async (url: string, user: string, actions
   const payload = actionsResourcesList.map((actionResource) => ({
     action: actionResource.action,
     resource: actionResource.resource,
-    attributes: actionResource.rsource_attributes || {},
+    attributes: actionResource.resource_attributes || {},
   }));
   return await axios.post(`${url}?user=${user}`, { resourcesAndActions: payload }).then((response) => {
     return response.data;
