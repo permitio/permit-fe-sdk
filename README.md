@@ -31,7 +31,7 @@ import { Permit, permitState } from 'permit-fe-sdk';
 
 
 export const getAbility = async () => {
-    const permit = Permit({loggedInUser: "odedbd@gmail.com", backendUrl: "http://localhost:4000/"});
+    const permit = Permit({loggedInUser: "test@gmail.com", backendUrl: "http://localhost:4000/"});
     await permit.loadLocalState([{ action: "create", resource: "file" }, { action: "update", resource: "file" }, { action: "delete", resource: "file" }, { action: "read", resource: "file" }]);
     const caslConfig = permitState.getCaslJson();
     return caslConfig && caslConfig.length? new Ability(caslConfig) : undefined ;
@@ -43,7 +43,7 @@ if you want to use the POST Bulk endpoint, you can use the following code:
 import { Ability } from '@casl/ability';
 import { Permit, permitState } from 'permit-fe-sdk';
 export const getAbility = async () => {
-    const permit = Permit({loggedInUser: "odedbd@gmail.com", backendUrl: "http://localhost:4000/"});
+    const permit = Permit({loggedInUser: "test@gmail.com", backendUrl: "http://localhost:4000/"});
     await permit.loadLocalStateBulk([{ action: "create", resource: "file" }, { action: "update", resource: "file" }, { action: "delete", resource: "file" }, { action: "read", resource: "file" }]);
     const caslConfig = permitState.getCaslJson();
     return caslConfig && caslConfig.length? new Ability(caslConfig) : undefined ;
@@ -51,6 +51,9 @@ export const getAbility = async () => {
 ```
 
 In the above request, you also have the option to pass in resource_attributes that are needed for permissions check.
+
+Note that attributes are used solely for ABAC permission modeling. If using RBAC or ReBAC, leave it empty.
+
 Below is the example
 
 ```javascript
