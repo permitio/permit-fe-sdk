@@ -50,14 +50,14 @@ export const getAbility = async () => {
 }
 ```
 
-In the above request, you also have the option to pass in resource_attributes that are needed for permissions check.
+In the above request, you also have the option to pass in resourceAttributes that are needed for permissions check.
 
 Note that attributes are used solely for ABAC permission modeling. If using RBAC or ReBAC, leave it empty.
 
 Below is the example
 
 ```javascript
- await permit.loadLocalStateBulk([{ action: "create", resource: "file", resource_attributes: {
+ await permit.loadLocalStateBulk([{ action: "create", resource: "file", resourceAttributes: {
             "file_type":  "pdf"
         }
  }, { action: "update", resource: "file" }, { action: "delete", resource: "file" }, { action: "read", resource: "file" }]);

@@ -5,7 +5,7 @@ export const getBulkPermissionFromBE = async (url: string, user: string, actions
   const payload = actionsResourcesList.map((actionResource) => ({
     action: actionResource.action,
     resource: actionResource.resource,
-    resource_attributes: actionResource.resource_attributes || {},
+    resourceAttributes: actionResource.resourceAttributes || {},
   }));
   return await axios.post(`${url}?user=${user}`, { resourcesAndActions: payload }).then((response) => {
     return response.data;
@@ -28,13 +28,13 @@ export const getPermissionFromBE = async (url: string, user: string, action: str
     });
 };
 
-export const generateStateKey = (action: string, resource: string, resource_attributes: Record<string, any> = {}) => {
-  const sortedAttributes = Object.keys(resource_attributes)
+export const generateStateKey = (action: string, resource: string, resourceAttributes: Record<string, any> = {}) => {
+  const sortedAttributes = Object.keys(resourceAttributes)
     .sort()
     .reduce((obj, key) => {
-      obj[key] = resource_attributes[key];
+      obj[key] = resourceAttributes[key];
       return obj;
     }, {} as Record<string, any>);
-  const attributeKey = resource_attributes && Object.keys(resource_attributes).length > 0 ? `;resource_attributes:${JSON.stringify(sortedAttributes)}` : '';
+  const attributeKey = resourceAttributes && Object.keys(resourceAttributes).length > 0 ? `;resourceAttributes:${JSON.stringify(sortedAttributes)}` : '';
   return `action:${action};resource:${resource}${attributeKey}`;
 };
