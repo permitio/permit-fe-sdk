@@ -36,7 +36,8 @@ app.post("/", async (req, res) => {
   // iterate on resourcesAndActions and check them against the permit.io pdp with for loop
   const permittedList = [];
   for (let resourceAndAction of resourcesAndActions) {
-    const permitted = await permit.check(req.query.user, resourceAndAction.action, resourceAndAction.resource);
+    const resourceObj = {"type": resourceAndAction.resource, "attributes": resourceAndAction.resourceAttributes};
+    const permitted = await permit.check(req.query.user, resourceAndAction.action, resourceObj);
     console.log('permitted: ' + permitted);
     permittedList.push(permitted);
   }
