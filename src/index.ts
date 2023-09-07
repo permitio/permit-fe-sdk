@@ -33,7 +33,7 @@ const getBulkPermissionFromBE = async (url: string, user: string, actionsResourc
     return {
       action: actionResource.action,
       resource: actionResource.resource,
-      attributes: actionResource.resource_attributes || {},
+      resource_attributes: actionResource.resource_attributes || {},
     };
   });
   return await axios.post(`${url}?user=${user}`, { resourcesAndActions: payload }).then((response) => {
@@ -56,14 +56,14 @@ const getPermissionFromBE = async (url: string, user: string, action: string, re
     });
 };
 
-const generateStateKey = (action: string, resource: string, attributes: Record<string, any> = {}) => {
-  const sortedAttributes = Object.keys(attributes)
+const generateStateKey = (action: string, resource: string, resource_attributes: Record<string, any> = {}) => {
+  const sortedAttributes = Object.keys(resource_attributes)
     .sort()
     .reduce((obj, key) => {
-      obj[key] = attributes[key];
+      obj[key] = resource_attributes[key];
       return obj;
     }, {} as Record<string, any>);
-  const attributeKey = attributes && Object.keys(attributes).length > 0 ? `;attributes:${JSON.stringify(sortedAttributes)}` : '';
+  const attributeKey = resource_attributes && Object.keys(resource_attributes).length > 0 ? `;resource_attributes:${JSON.stringify(sortedAttributes)}` : '';
   return `action:${action};resource:${resource}${attributeKey}`;
 };
 const permitLocalState: PermitStateSchema = {};
@@ -116,8 +116,8 @@ export const Permit = ({ loggedInUser, backendUrl, defaultAnswerIfNotExist = fal
     return permitCaslState;
   };
 
-  const check = (action: string, resource: string, attributes: Record<string, any> = {}) => {
-    const key = generateStateKey(action, resource, attributes);
+  const check = (action: string, resource: string, resource_attributes: Record<string, any> = {}) => {
+    const key = generateStateKey(action, resource, resource_attributes);
     if (permitLocalState[key]) {
       return permitLocalState[key];
     } else {
@@ -125,8 +125,8 @@ export const Permit = ({ loggedInUser, backendUrl, defaultAnswerIfNotExist = fal
     }
   };
 
-  const addKeyToState = async (action: string, resource: string, attributes: Record<string, any> = {}) => {
-    const key = generateStateKey(action, resource, attributes);
+  const addKeyToState = async (action: string, resource: string, resource_attributes: Record<string, any> = {}) => {
+    const key = generateStateKey(action, resource, resource_attributes);
     permitLocalState[key] = await getPermissionFromBE(backendUrl, loggedInUser, action, resource, defaultAnswerIfNotExist);
     permitCaslState.push({ action, subject: resource, inverted: !permitLocalState[key] });
   };

@@ -38,4 +38,27 @@ export const getAbility = async () => {
 }
 ```
 
+if you want to use the POST Bulk endpoint, you can use the following code:
+```javascript
+import { Ability } from '@casl/ability';
+import { Permit, permitState } from 'permit-fe-sdk';
+export const getAbility = async () => {
+    const permit = Permit({loggedInUser: "odedbd@gmail.com", backendUrl: "http://localhost:4000/"});
+    await permit.loadLocalStateBulk([{ action: "create", resource: "file" }, { action: "update", resource: "file" }, { action: "delete", resource: "file" }, { action: "read", resource: "file" }]);
+    const caslConfig = permitState.getCaslJson();
+    return caslConfig && caslConfig.length? new Ability(caslConfig) : undefined ;
+}
+```
+
+In the above request, you also have the option to pass in resource_attributes that are needed for permissions check.
+Below is the example
+
+```javascript
+ await permit.loadLocalStateBulk([{ action: "create", resource: "file", resource_attributes: {
+            "file_type":  "pdf"
+        }
+ }, { action: "update", resource: "file" }, { action: "delete", resource: "file" }, { action: "read", resource: "file" }]);
+```
+
+
 For any questions, please contact us at [permit.io Slack community](https://permit-io.slack.com/join/shared_invite/zt-nz6yjgnp-RlP9rtOPwO0n0aH_vLbmBQ)
