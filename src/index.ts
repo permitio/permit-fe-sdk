@@ -103,6 +103,7 @@ export const Permit = ({ loggedInUser, backendUrl, defaultAnswerIfNotExist = fal
     throw new Error('backendUrl is required, put your backend check url here');
   }
 
+  // Extracting common components from loadLocalState & loadLocalStateBulk and putting it in a helper function.
   const updatePermissionState = async (actionResource: ActionResourceSchema, permission: boolean) => {
     const key = generateStateKey(actionResource.action, actionResource.resource, actionResource.resourceAttributes);
     permitLocalState[key] = permission;
@@ -157,6 +158,6 @@ export const Permit = ({ loggedInUser, backendUrl, defaultAnswerIfNotExist = fal
     check,
     getCaslJson,
   };
-  
+
   return permitState;
 };
