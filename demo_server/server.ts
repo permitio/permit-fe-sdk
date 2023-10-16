@@ -53,8 +53,6 @@ app.post("/", async (req, res) => {
 		return res.status(200).json({ permittedList });
 });
 
-
-
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
 });
