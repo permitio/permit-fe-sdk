@@ -1,121 +1,67 @@
 # permit-fe-sdk
 
 ## Overview
-
 This package lets you easily integrate Permit.io advanced permissions into your frontend application. It is integrated with [CASL](https://casl.js.org/v5/en/) and so can be used with any frontend framework.
 
 ## Installation
-
 ```bash
 npm install permit-fe-sdk
 yarn add permit-fe-sdk
 ```
 
 ## Usage
+### 1. Adding a route in your backend to fetch the permissions
+You can see an example server in the demo_server folder.
+The server will query the PDP (that shouldn't be exposed to the frontend) and return the permissions for the current user.
+Notice that the server has two endpoints:
+- GET endpoint to fetch the permissions for the current user for a specific resource and action 
+- POST endpoint to fetch the permissions for the current user for bulk resources and actions (recommended)
 
-### Setting Up a Backend Route to Fetch Permissions
+You can only use one of the endpoints, but the POST endpoint is recommended as it will reduce the number of requests between the frontend and the backend.
 
-#### 1. **Example Server**
+### 2. Using the SDK in your frontend
+You can see a demo app for [React in this repository](https://github.com/permitio/fe-demo-react)
+And a demo app for [Angular in this repository](https://github.com/permitio/fe-demo-angular)
+For any other frontend framework, just check the [CASL documentation](https://casl.js.org/v5/en/) to see how to import data into CASL ability and use this SDK to create the data for CASL.
 
-- Refer to the `demo_server` folder for a sample server configuration.
-
-#### 2. **Communication with PDP**
-
-- The server interacts with the PDP (Policy Decision Point) to fetch permissions for the current user.
-- **Note**: It's essential to ensure the PDP is not exposed to the frontend.
-
-#### 3. **Available Endpoints**
-
-- **GET Endpoint**:
-  - Purpose: Fetch permissions for a specific resource and action associated with the current user.
-- **POST Endpoint (Recommended)**:
-  - Purpose: Retrieve permissions in bulk for multiple resources and actions for the current user.
-
-#### 4. **Recommendation**
-
-- Using the POST endpoint is preferable as it reduces the number of requests between the frontend and backend, offering a more efficient data retrieval process.
-
-### Using the SDK in Your Frontend
-
-#### Available Demo Apps
-
-- **React**: Check out the [demo app for React](https://github.com/permitio/fe-demo-react).
-- **Angular**: Refer to the [demo app for Angular](https://github.com/permitio/fe-demo-angular).
-
-#### Integration with Other Frontend Frameworks
-
-If you're working with a different frontend framework, consult the [CASL documentation](https://casl.js.org/v5/en/). It provides guidance on importing data into CASL ability. This SDK can then help generate the necessary data for CASL.
-
-#### Integration Guide for React:
-
-You can create a react component called an `AbilityLoader` to handle this:
-
+This is how I do it for React:
 ```javascript
 import { Ability } from '@casl/ability';
 import { Permit, permitState } from 'permit-fe-sdk';
 
-const getAbility = async (loggedInUser) => {
-  const permit = Permit({
-    loggedInUser: loggedInUser, // This is the unique userId from your authentication provider in the current session.
-    backendUrl: '/api/your-endpoint',
-  });
 
-  await permit.loadLocalState([
-    { action: 'view', resource: 'statement' },
-    { action: 'view', resource: 'products' },
-    { action: 'delete', resource: 'file' },
-    { action: 'create', resource: 'document' },
-  ]);
-
-  const caslConfig = permitState.getCaslJson();
-
-  return caslConfig && caslConfig.length ? new Ability(caslConfig) : undefined;
-};
-```
-
-To utilize the POST Bulk endpoint, refer to the code below. In the following request, be aware that you can optionally
-include `resourceAttributes` for the permissions check. However, these attributes are specifically for ABAC permission modeling.
-If you're employing RBAC or ReBAC, simply omit them.
-
-```javascript
-import { Ability } from '@casl/ability';
-import { Permit, permitState } from 'permit-fe-sdk';
-
-const getAbility = async (loggedInUser) => {
-  const permit = Permit({
-    loggedInUser: loggedInUser,
-    backendUrl: '/api/dashboardBulk',
-  });
-
-  await permit.loadLocalStateBulk([
-    { action: 'view', resource: 'statament' },
-    { action: 'view', resource: 'products' },
-    { action: 'delete', resource: 'file' },
-    { action: 'create', resource: 'document' },
-    {
-      action: 'view',
-      resource: 'files_for_poland_employees',
-      resourceAttributes: { country: 'PL' },
-    },
-  ]);
-
-  const caslConfig = permitState.getCaslJson();
-
-  return caslConfig && caslConfig.length ? new Ability(caslConfig) : undefined;
-};
-```
-
-Once you perfom the checks, make sure you check if the current user is signed in and assign them the abilities returned.
-
-```javascript
-if (isSignedIn) {
-  getAbility(user.id).then((caslAbility) => {
-    setAbility(caslAbility);
-  });
+export const getAbility = async () => {
+    const permit = Permit({loggedInUser: "test@gmail.com", backendUrl: "http://localhost:4000/"});
+    await permit.loadLocalState([{ action: "create", resource: "file" }, { action: "update", resource: "file" }, { action: "delete", resource: "file" }, { action: "read", resource: "file" }]);
+    const caslConfig = permitState.getCaslJson();
+    return caslConfig && caslConfig.length? new Ability(caslConfig) : undefined ;
 }
 ```
 
-If you would like to see how the normal or bulk local states should be handled in your API - refer to the `demo_server`
-folder for a sample server configuration.
+if you want to use the POST Bulk endpoint, you can use the following code:
+```javascript
+import { Ability } from '@casl/ability';
+import { Permit, permitState } from 'permit-fe-sdk';
+export const getAbility = async () => {
+    const permit = Permit({loggedInUser: "test@gmail.com", backendUrl: "http://localhost:4000/"});
+    await permit.loadLocalStateBulk([{ action: "create", resource: "file" }, { action: "update", resource: "file" }, { action: "delete", resource: "file" }, { action: "read", resource: "file" }]);
+    const caslConfig = permitState.getCaslJson();
+    return caslConfig && caslConfig.length? new Ability(caslConfig) : undefined ;
+}
+```
 
-For any questions, please reach out to us in the [Permit community](https://permit-io.slack.com/join/shared_invite/zt-nz6yjgnp-RlP9rtOPwO0n0aH_vLbmBQ).
+In the above request, you also have the option to pass in resourceAttributes that are needed for permissions check.
+
+Note that attributes are used solely for ABAC permission modeling. If using RBAC or ReBAC, leave it empty.
+
+Below is the example
+
+```javascript
+ await permit.loadLocalStateBulk([{ action: "create", resource: "file", resourceAttributes: {
+            "file_type":  "pdf"
+        }
+ }, { action: "update", resource: "file" }, { action: "delete", resource: "file" }, { action: "read", resource: "file" }]);
+```
+
+
+For any questions, please contact us at [permit.io Slack community](https://permit-io.slack.com/join/shared_invite/zt-nz6yjgnp-RlP9rtOPwO0n0aH_vLbmBQ)
