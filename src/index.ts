@@ -7,8 +7,8 @@ export interface PermitCheckSchema {
   backendUrl: string;
   defaultAnswerIfNotExist: boolean;
   state: PermitStateSchema;
-  check: (action: string, resource: string, resourceAttributes?: Record<string, any>) => boolean;
-  addKeyToState: (action: string, resource: string, resourceAttributes?: Record<string, any>) => Promise<void>;
+  check: (action: string, resource: string, userAttributes: Record<string, any>, resourceAttributes?: Record<string, any>) => boolean;
+  addKeyToState: (action: string, resource: string, userAttributes: Record<string, any>, resourceAttributes?: Record<string, any>) => Promise<void>;
   loadLocalState: (actionsResourcesList: ActionResourceSchema[]) => Promise<void>;
   getCaslJson: () => CaslPermissionSchema[];
   loadLocalStateBulk: (actionsResourcesList: ActionResourceSchema[]) => Promise<void>;
@@ -27,7 +27,7 @@ export interface PermitStateSchema {
 export interface ActionResourceSchema {
   action: string;
   resource: string;
-
+  userAttributes?: Record<string, any>;
   resourceAttributes?: Record<string, any>;
 }
 
@@ -49,9 +49,10 @@ const getBulkPermissionFromBE = async (
   user: string,
   actionsResourcesList: ActionResourceSchema[]
 ): Promise<boolean[]> => {
-  const payload = actionsResourcesList.map(({ action, resource, resourceAttributes = {} }) => ({
+  const payload = actionsResourcesList.map(({ action, resource, userAttributes, resourceAttributes = {} }) => ({
     action,
     resource,
+    userAttributes,
     resourceAttributes
   }));
 
@@ -81,18 +82,27 @@ const getPermissionFromBE = async (
     });
 };
 
-const generateStateKey = (action: string, resource: string, resourceAttributes: Record<string, any> = {}): string => {
-  const sortedAttributesKeys = Object.keys(resourceAttributes).sort();
+const generateStateKey = (action: string, resource: string, userAttributes: Record<string, any>, resourceAttributes: Record<string, any> = {}): string => {
+  const sortedResourceAttributeKeys = Object.keys(resourceAttributes).sort();
+  const sortedUserAttributeKeys = Object.keys(userAttributes).sort();
 
-  const sortedAttributes = sortedAttributesKeys.reduce((obj, key) => {
+  const sortedResourceAttributes = sortedResourceAttributeKeys.reduce((obj, key) => {
     obj[key] = resourceAttributes[key];
     return obj;
   }, {} as Record<string, any>);
 
-  const hasAttributes = sortedAttributesKeys.length > 0;
-  const attributeKey = hasAttributes ? `;resourceAttributes:${JSON.stringify(sortedAttributes)}` : '';
+  const sortedUserAttributes = sortedUserAttributeKeys.reduce((obj, key) => {
+    obj[key] = userAttributes[key];
+    return obj;
+  }, {} as Record<string, any>);
 
-  return `action:${action};resource:${resource}${attributeKey}`;
+  const hasResourceAttributes = sortedResourceAttributeKeys.length > 0;
+  const hasUserAttributes = sortedUserAttributeKeys.length > 0;
+
+  const resourceAttributeKey = hasResourceAttributes ? `;resourceAttributes:${JSON.stringify(sortedResourceAttributes)}` : '';
+  const userAttributeKey = hasUserAttributes ? `;userAttributes:${JSON.stringify(sortedUserAttributes)}` : ''
+
+  return `user:${userAttributeKey};action:${action};resource:${resource}${resourceAttributeKey}`;
 };
 
 export const Permit = ({ loggedInUser, backendUrl, defaultAnswerIfNotExist = false }: PermitProps) => {
@@ -105,11 +115,12 @@ export const Permit = ({ loggedInUser, backendUrl, defaultAnswerIfNotExist = fal
 
   // Extracting common components from loadLocalState & loadLocalStateBulk and putting it in a helper function.
   const updatePermissionState = async (actionResource: ActionResourceSchema, permission: boolean) => {
-    const key = generateStateKey(actionResource.action, actionResource.resource, actionResource.resourceAttributes);
+    const { action, resource, userAttributes = {}, resourceAttributes = {} } = actionResource;
+    const key = generateStateKey(action, resource, userAttributes, resourceAttributes);
     permitLocalState[key] = permission;
     permitCaslState.push({
-      action: actionResource.action,
-      subject: actionResource.resource,
+      action: action,
+      subject: resource,
       inverted: !permission
     });
   };
@@ -137,12 +148,12 @@ export const Permit = ({ loggedInUser, backendUrl, defaultAnswerIfNotExist = fal
     return permitCaslState;
   };
 
-  const check = (action: string, resource: string, resourceAttributes: Record<string, any> = {}): boolean => {
-    const key = generateStateKey(action, resource, resourceAttributes);
+  const check = (action: string, resource: string, userAttributes: Record<string, any>, resourceAttributes: Record<string, any> = {}): boolean => {
+    const key = generateStateKey(action, resource, userAttributes, resourceAttributes);
     return permitLocalState[key] ?? defaultAnswerIfNotExist;
   };
 
-  const addKeyToState = async (action: string, resource: string, resourceAttributes: Record<string, any> = {}) => {
+  const addKeyToState = async (action: string, resource: string, userAttributes: Record<string, any>, resourceAttributes: Record<string, any> = {}) => {
     const permission = await getPermissionFromBE(backendUrl, loggedInUser, action, resource, defaultAnswerIfNotExist);
     await updatePermissionState({ action, resource, resourceAttributes }, permission);
   };
