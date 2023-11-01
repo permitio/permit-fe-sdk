@@ -95,6 +95,10 @@ const getAbility = async (loggedInUser) => {
     {
       action: 'view',
       resource: 'files_for_poland_employees',
+      userAttributes: {
+        department: "Engineering",
+        salary: "100K"
+      }
       resourceAttributes: { country: 'PL' },
     },
   ]);
@@ -105,7 +109,7 @@ const getAbility = async (loggedInUser) => {
 };
 ```
 
-Once you perfom the checks, make sure you check if the current user is signed in and assign them the abilities returned.
+Once you perform the checks, make sure you check if the current user is signed in and assign them the abilities returned.
 
 ```javascript
 if (isSignedIn) {
