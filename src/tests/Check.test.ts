@@ -14,8 +14,8 @@ describe('Permission Service', () => {
     });
 
     it('with attributes', () => {
-      const key = generateStateKey('read', 'file', { attr1: 'value1', attr2: 'value2' });
-      expect(key).toBe('action:read;resource:file;resourceAttributes:{"attr1":"value1","attr2":"value2"}');
+      const key = generateStateKey('read', 'file', { attr2: 'value2'}, { attr1: 'value1', attr2: 'value2' });
+      expect(key).toBe('action:read;resource:file;userAttributes:{"attr2":"value2"};resourceAttributes:{"attr1":"value1","attr2":"value2"}');
     });
   });
 
@@ -23,13 +23,13 @@ describe('Permission Service', () => {
     it('should send request with payload and attributes', async () => {
       mockedAxios.post.mockResolvedValueOnce({ data: [true, false, true] });
       const result = await getBulkPermissionFromBE('http://example.com', 'user1', [
-        { action: 'read', resource: 'file', resourceAttributes: { attr1: 'value1' } },
+        { action: 'read', resource: 'file', userAttributes: { attr2: 'value2'}, resourceAttributes: { attr1: 'value1' } },
         { action: 'write', resource: 'file' },
       ]);
       expect(mockedAxios.post).toHaveBeenCalledWith('http://example.com?user=user1', {
         resourcesAndActions: [
-          { action: 'read', resource: 'file', resourceAttributes: { attr1: 'value1' } },
-          { action: 'write', resource: 'file', resourceAttributes: {} },
+          { action: 'read', resource: 'file', userAttributes: { attr2: 'value2'}, resourceAttributes: { attr1: 'value1' } },
+          { action: 'write', resource: 'file', userAttributes: {}, resourceAttributes: {} },
         ],
       });
       expect(result).toEqual([true, false, true]);
@@ -43,8 +43,8 @@ describe('Permission Service', () => {
       ]);
       expect(mockedAxios.post).toHaveBeenCalledWith('http://example.com?user=user1', {
         resourcesAndActions: [
-          { action: 'read', resource: 'file', resourceAttributes: {} },
-          { action: 'write', resource: 'file', resourceAttributes: {} },
+          { action: 'read', resource: 'file', userAttributes: {}, resourceAttributes: {} },
+          { action: 'write', resource: 'file', userAttributes: {}, resourceAttributes: {} },
         ],
       });
       expect(result).toEqual([true, false]);

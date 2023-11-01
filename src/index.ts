@@ -49,7 +49,7 @@ const getBulkPermissionFromBE = async (
   user: string,
   actionsResourcesList: ActionResourceSchema[]
 ): Promise<boolean[]> => {
-  const payload = actionsResourcesList.map(({ action, resource, userAttributes, resourceAttributes = {} }) => ({
+  const payload = actionsResourcesList.map(({ action, resource, userAttributes = {}, resourceAttributes = {} }) => ({
     action,
     resource,
     userAttributes,

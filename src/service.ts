@@ -5,6 +5,7 @@ export const getBulkPermissionFromBE = async (url: string, user: string, actions
   const payload = actionsResourcesList.map((actionResource) => ({
     action: actionResource.action,
     resource: actionResource.resource,
+    userAttributes: actionResource.userAttributes || {},
     resourceAttributes: actionResource.resourceAttributes || {},
   }));
   return await axios.post(`${url}?user=${user}`, { resourcesAndActions: payload }).then((response) => {
@@ -28,13 +29,23 @@ export const getPermissionFromBE = async (url: string, user: string, action: str
     });
 };
 
-export const generateStateKey = (action: string, resource: string, resourceAttributes: Record<string, any> = {}) => {
-  const sortedAttributes = Object.keys(resourceAttributes)
+export const generateStateKey = (action: string, resource: string, userAttributes: Record<string, any> = {}, resourceAttributes: Record<string, any> = {}) => {
+  const sortedResourceAttributes = Object.keys(resourceAttributes)
     .sort()
     .reduce((obj, key) => {
       obj[key] = resourceAttributes[key];
       return obj;
     }, {} as Record<string, any>);
-  const attributeKey = resourceAttributes && Object.keys(resourceAttributes).length > 0 ? `;resourceAttributes:${JSON.stringify(sortedAttributes)}` : '';
-  return `action:${action};resource:${resource}${attributeKey}`;
+
+  const sortedUserAttributes = Object.keys(userAttributes)
+  .sort()
+  .reduce((obj, key) => {
+    obj[key] = userAttributes[key];
+    return obj;
+  }, {} as Record<string, any>);
+    
+  const userAttributeKey = userAttributes && Object.keys(userAttributes).length > 0 ? `;userAttributes:${JSON.stringify(sortedUserAttributes)}` : '';
+  const resourceAttributeKey = resourceAttributes && Object.keys(resourceAttributes).length > 0 ? `;resourceAttributes:${JSON.stringify(sortedResourceAttributes)}` : '';
+
+  return `action:${action};resource:${resource}${userAttributeKey}${resourceAttributeKey}`;
 };
