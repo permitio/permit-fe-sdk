@@ -39,8 +39,11 @@ app.post("/", async (req, res) => {
 		}
 
 		const checkPermissions = async (resourceAndAction) => {
-			const { resource, action, resourceAttributes } = resourceAndAction;
-			return permit.check(userId, action, {
+			const { resource, action, userAttributes, resourceAttributes } = resourceAndAction;
+			return permit.check({
+				key: userId,
+				attributes: userAttributes,
+			}, action, {
 				type: resource,
 				attributes: resourceAttributes,
 			});
