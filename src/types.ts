@@ -1,5 +1,6 @@
 export interface PermitCheckSchema {
   loggedInUser: string;
+  userAttributes: Record<string, any>;
   backendUrl: string;
   defaultAnswerIfNotExist: boolean;
   state: PermitStateSchema;
