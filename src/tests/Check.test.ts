@@ -8,7 +8,7 @@ jest.mock('axios');
 jest.mock('..', () => ({
   permitState: {
     // userAttributes: {}, // default empty object or add some data for tests
-    userAttributes: { attr2: 'value2'},
+    userAttributes: { attr2: 'value2' },
   },
 }));
 const mockedAxios = axios as jest.Mocked<typeof axios>;
