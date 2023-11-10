@@ -38,8 +38,8 @@ app.post("/", async (req, res) => {
 			return res.status(400).json({ error: "No userId provided." });
 		}
 
-		const checkPermissions = async (resourceAndAction) => {
-			const { resource, action, userAttributes, resourceAttributes } = resourceAndAction;
+		const checkPermissions = async (checkParams) => {
+			const { resource, action, userAttributes, resourceAttributes } = checkParams;
 			return permit.check({
 				key: userId,
 				attributes: userAttributes,
