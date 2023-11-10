@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { ActionResourceSchema } from './types';
+import { permitState } from '.';
 
 export const getBulkPermissionFromBE = async (url: string, user: string, actionsResourcesList: ActionResourceSchema[]): Promise<boolean[]> => {
   const payload = actionsResourcesList.map((actionResource) => ({
@@ -29,12 +30,15 @@ export const getPermissionFromBE = async (url: string, user: string, action: str
 };
 
 export const generateStateKey = (action: string, resource: string, resourceAttributes: Record<string, any> = {}) => {
-  const sortedAttributes = Object.keys(resourceAttributes)
+  const sortedResourceAttributes = Object.keys(resourceAttributes)
     .sort()
     .reduce((obj, key) => {
       obj[key] = resourceAttributes[key];
       return obj;
     }, {} as Record<string, any>);
-  const attributeKey = resourceAttributes && Object.keys(resourceAttributes).length > 0 ? `;resourceAttributes:${JSON.stringify(sortedAttributes)}` : '';
-  return `action:${action};resource:${resource}${attributeKey}`;
+    
+    const userAttributeKey = `;userAttributes:${JSON.stringify(permitState.userAttributes)}`;
+    const resourceAttributeKey = resourceAttributes && Object.keys(resourceAttributes).length > 0 ? `;resourceAttributes:${JSON.stringify(sortedResourceAttributes)}` : '';
+
+  return `action:${action};resource:${resource}${userAttributeKey}${resourceAttributeKey}`;
 };
