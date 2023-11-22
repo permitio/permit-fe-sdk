@@ -22,7 +22,7 @@ describe('Permission Service', () => {
     });
 
     it('with attributes', () => {
-      permitState.userAttributes = { attr2: 'value2'};
+      permitState.userAttributes = { attr2: 'value2' };
       const key = generateStateKey('read', 'file', { attr1: 'value1', attr2: 'value2' });
       expect(key).toBe('action:read;resource:file;userAttributes:{"attr2":"value2"};resourceAttributes:{"attr1":"value1","attr2":"value2"}');
     });
@@ -30,7 +30,7 @@ describe('Permission Service', () => {
 
   describe('getBulkPermissionFromBE', () => {
     it('should send request with payload and attributes', async () => {
-      permitState.userAttributes = { attr2: 'value2'};
+      permitState.userAttributes = { attr2: 'value2' };
       mockedAxios.post.mockResolvedValueOnce({ data: [true, false, true] });
       const result = await getBulkPermissionFromBE('http://example.com', 'user1', [
         { action: 'read', resource: 'file', resourceAttributes: { attr1: 'value1' } },

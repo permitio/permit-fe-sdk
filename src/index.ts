@@ -45,29 +45,19 @@ export type PermitProps = {
   defaultAnswerIfNotExist?: boolean;
 };
 
-const getBulkPermissionFromBE = async (
-  url: string,
-  user: string,
-  actionsResourcesList: ActionResourceSchema[]
-): Promise<boolean[]> => {
+const getBulkPermissionFromBE = async (url: string, user: string, actionsResourcesList: ActionResourceSchema[]): Promise<boolean[]> => {
   const payload = actionsResourcesList.map(({ action, resource, userAttributes = {}, resourceAttributes = {} }) => ({
     action,
     resource,
     userAttributes,
-    resourceAttributes
+    resourceAttributes,
   }));
 
   const response = await axios.post(`${url}?user=${user}`, { resourcesAndActions: payload });
   return response.data.permittedList;
 };
 
-const getPermissionFromBE = async (
-  url: string,
-  user: string,
-  action: string,
-  resource: string,
-  defaultPermission: boolean
-): Promise<boolean> => {
+const getPermissionFromBE = async (url: string, user: string, action: string, resource: string, defaultPermission: boolean): Promise<boolean> => {
   return await axios
     .get(`${url}?user=${user}&action=${action}&resource=${resource}`)
     .then((response) => {
@@ -113,9 +103,9 @@ export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultA
     const key = generateStateKey(action, resource, resourceAttributes);
     permitLocalState[key] = permission;
     permitCaslState.push({
-      action: action,
+      action,
       subject: resource,
-      inverted: !permission
+      inverted: !permission,
     });
   };
 
