@@ -36,9 +36,10 @@ export const generateStateKey = (action: string, resource: string, resourceAttri
       obj[key] = resourceAttributes[key];
       return obj;
     }, {} as Record<string, any>);
-    
-    const userAttributeKey = `;userAttributes:${JSON.stringify(permitState.userAttributes)}`;
-    const resourceAttributeKey = resourceAttributes && Object.keys(resourceAttributes).length > 0 ? `;resourceAttributes:${JSON.stringify(sortedResourceAttributes)}` : '';
+
+  const userAttributeKey = `;userAttributes:${JSON.stringify(permitState.userAttributes)}`;
+  const resourceAttributeKey =
+    resourceAttributes && Object.keys(resourceAttributes).length > 0 ? `;resourceAttributes:${JSON.stringify(sortedResourceAttributes)}` : '';
 
   return `action:${action};resource:${resource}${userAttributeKey}${resourceAttributeKey}`;
 };
