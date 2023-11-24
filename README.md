@@ -96,9 +96,9 @@ const getAbility = async (loggedInUser) => {
       action: 'view',
       resource: 'files_for_poland_employees',
       userAttributes: {
-        department: "Engineering",
-        salary: "100K"
-      }
+        department: 'Engineering',
+        salary: '100K',
+      },
       resourceAttributes: { country: 'PL' },
     },
   ]);
