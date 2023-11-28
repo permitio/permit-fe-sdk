@@ -44,7 +44,7 @@ yarn add permit-fe-sdk
 
 #### Integration with Other Frontend Frameworks
 
-If you're working with a different frontend framework, consult the [CASL documentation](https://casl.js.org/v5/en/). It provides guidance on importing data into CASL ability. This SDK can then help generate the necessary data for CASL.
+If you're working with a different frontend framework, consult the [CASL documentation](https://casl.js.org/v5/en/guide/intro). It provides guidance on importing data into CASL ability. This SDK can then help generate the necessary data for CASL.
 
 #### Integration Guide for React:
 
