@@ -9,6 +9,7 @@ export interface PermitCheckSchema {
   loadLocalState: (actionsResourcesList: ActionResourceSchema[]) => Promise<void>;
   getCaslJson: () => CaslPermissionSchema[];
   loadLocalStateBulk: (actionsResourcesList: ActionResourceSchema[]) => Promise<void>;
+  reset: () => void;
 }
 
 export interface CaslPermissionSchema {
@@ -66,7 +67,7 @@ const generateStateKey = (action: string, resource: string, resourceAttributes: 
   const attributeKey = resourceAttributes && Object.keys(resourceAttributes).length > 0 ? `;resourceAttributes:${JSON.stringify(sortedAttributes)}` : '';
   return `action:${action};resource:${resource}${attributeKey}`;
 };
-const permitLocalState: PermitStateSchema = {};
+let permitLocalState: PermitStateSchema = {};
 export let permitState: PermitCheckSchema;
 export let permitCaslState: CaslPermissionSchema[] = [];
 
@@ -131,6 +132,13 @@ export const Permit = ({ loggedInUser, backendUrl, defaultAnswerIfNotExist = fal
     permitCaslState.push({ action, subject: resource, inverted: !permitLocalState[key] });
   };
 
+  // use function on logout / user permission change
+  const reset = () => {
+    permitLocalState = {};
+    permitCaslState = [];
+    isInitialized = false;
+  }
+
   permitState = {
     addKeyToState,
     loadLocalState,
@@ -141,6 +149,7 @@ export const Permit = ({ loggedInUser, backendUrl, defaultAnswerIfNotExist = fal
     state: permitLocalState,
     check,
     getCaslJson,
+    reset
   };
   return permitState;
 };
