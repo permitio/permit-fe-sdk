@@ -13,6 +13,7 @@ export interface PermitCheckSchema {
   loadLocalState: (actionsResourcesList: ActionResourceSchema[]) => Promise<void>;
   getCaslJson: () => CaslPermissionSchema[];
   loadLocalStateBulk: (actionsResourcesList: ActionResourceSchema[]) => Promise<void>;
+  reset: () => void;
 }
 
 export interface CaslPermissionSchema {
@@ -33,7 +34,7 @@ export interface ActionResourceSchema {
 }
 
 // Permit State
-const permitLocalState: PermitStateSchema = {};
+let permitLocalState: PermitStateSchema = {};
 export let permitState: PermitCheckSchema;
 export let permitCaslState: CaslPermissionSchema[] = [];
 let isInitialized = false;
@@ -142,6 +143,12 @@ export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultA
     await updatePermissionState({ action, resource, userAttributes: permitState.userAttributes, resourceAttributes }, permission);
   };
 
+  const reset = () => {
+    permitLocalState = {};
+    permitCaslState = [];
+    isInitialized = false;
+  }
+
   permitState = {
     addKeyToState,
     loadLocalState,
@@ -153,6 +160,7 @@ export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultA
     userAttributes,
     check,
     getCaslJson,
+    reset
   };
 
   return permitState;
