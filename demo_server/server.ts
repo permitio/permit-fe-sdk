@@ -29,22 +29,32 @@ app.get("/", async (req, res) => {
   }
 });
 
-// post that gets list of action and resources and checks them against the permit.io pdp
+// POST that gets list of action and resources and checks them against the Permit.io PDP
 app.post("/", async (req, res) => {
-  console.log(req.body.resourcesAndActions);
-  const resourcesAndActions = req.body.resourcesAndActions;
-  // iterate on resourcesAndActions and check them against the permit.io pdp with for loop
-  const permittedList = [];
-  for (let resourceAndAction of resourcesAndActions) {
-    const resourceObj = {"type": resourceAndAction.resource, "attributes": resourceAndAction.resourceAttributes};
-    const permitted = await permit.check(req.query.user, resourceAndAction.action, resourceObj);
-    console.log('permitted: ' + permitted);
-    permittedList.push(permitted);
-  }
-  res.status(200).send({ permittedList: permittedList });
+  const { resourcesAndActions } = req.body;
+		const { user: userId } = req.query;
+
+		if (!userId) {
+			return res.status(400).json({ error: "No userId provided." });
+		}
+
+		const checkPermissions = async (checkParams) => {
+			const { resource, action, userAttributes, resourceAttributes } = checkParams;
+			return permit.check({
+				key: userId,
+				attributes: userAttributes,
+			}, action, {
+				type: resource,
+				attributes: resourceAttributes,
+			});
+		};
+
+		const permittedList = await Promise.all(
+			resourcesAndActions.map(checkPermissions)
+		);
+
+		return res.status(200).json({ permittedList });
 });
-
-
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);

@@ -1,5 +1,6 @@
 export interface PermitCheckSchema {
   loggedInUser: string;
+  userAttributes: Record<string, any>;
   backendUrl: string;
   defaultAnswerIfNotExist: boolean;
   state: PermitStateSchema;
@@ -23,6 +24,6 @@ export interface PermitStateSchema {
 export interface ActionResourceSchema {
   action: string;
   resource: string;
-
+  userAttributes?: Record<string, any>;
   resourceAttributes?: Record<string, any>;
 }
