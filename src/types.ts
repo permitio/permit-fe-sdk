@@ -4,8 +4,8 @@ export interface PermitCheckSchema {
   backendUrl: string;
   defaultAnswerIfNotExist: boolean;
   state: PermitStateSchema;
-  check: (action: string, resource: string, resourceAttributes?: Record<string, any>) => boolean;
-  addKeyToState: (action: string, resource: string, resourceAttributes?: Record<string, any>) => Promise<void>;
+  check: (action: string, resource: string | ReBACResourceSchema, resourceAttributes?: Record<string, any>) => boolean;
+  addKeyToState: (action: string, resource: string | ReBACResourceSchema, resourceAttributes?: Record<string, any>) => Promise<void>;
   loadLocalState: (actionsResourcesList: ActionResourceSchema[]) => Promise<void>;
   getCaslJson: () => CaslPermissionSchema[];
   loadLocalStateBulk: (actionsResourcesList: ActionResourceSchema[]) => Promise<void>;
@@ -23,7 +23,12 @@ export interface PermitStateSchema {
 
 export interface ActionResourceSchema {
   action: string;
-  resource: string;
+  resource: string | ReBACResourceSchema;
   userAttributes?: Record<string, any>;
   resourceAttributes?: Record<string, any>;
+}
+
+export interface ReBACResourceSchema {
+  type: string;
+  key: string;
 }

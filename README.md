@@ -109,6 +109,27 @@ const getAbility = async (loggedInUser) => {
 };
 ```
 
+### Working with ReBAC
+
+ReBAC (Relationship-Based Access Control) allows permissions to be determined based on the relationships between users and resources. For example, you might want to check if a user is a member of a specific group before allowing access to a resource.
+
+#### Example ReBAC Usage:
+
+To check permissions based on relationships, use the following format:
+
+```javascript
+permit.check(userId, action, `member_group:${group}`);
+```
+
+Or, using the shorthand object notation:
+
+```javascript
+permit.check(userId, action, {
+  type: 'member_group',
+  key: group,
+});
+```
+
 Once you perform the checks, make sure you check if the current user is signed in and assign them the abilities returned.
 
 ```javascript
