@@ -1,21 +1,24 @@
 import axios from 'axios';
-import { ActionResourceSchema } from './types';
+import { ActionResourceSchema, ReBACResourceSchema } from './types';
 import { permitState } from '.';
 
 export const getBulkPermissionFromBE = async (url: string, user: string, actionsResourcesList: ActionResourceSchema[]): Promise<boolean[]> => {
   const payload = actionsResourcesList.map((actionResource) => ({
     action: actionResource.action,
-    resource: actionResource.resource,
+    resource: typeof actionResource.resource === 'string' ? actionResource.resource : `${actionResource.resource.type}:${actionResource.resource.key}`,
     resourceAttributes: actionResource.resourceAttributes || {},
   }));
+  
   return await axios.post(`${url}?user=${user}`, { resourcesAndActions: payload }).then((response) => {
     return response.data;
   });
 };
 
-export const getPermissionFromBE = async (url: string, user: string, action: string, resource: string, defaultPermission: boolean): Promise<boolean> => {
+export const getPermissionFromBE = async (url: string, user: string, action: string, resource: string | ReBACResourceSchema, defaultPermission: boolean): Promise<boolean> => {
+  const resourceKey = typeof resource === 'string' ? resource : `${resource.type}:${resource.key}`;
+  
   return await axios
-    .get(`${url}?user=${user}&action=${action}&resource=${resource}`)
+    .get(`${url}?user=${user}&action=${action}&resource=${resourceKey}`)
     .then((response) => {
       return response.data.permitted;
     })
@@ -29,7 +32,7 @@ export const getPermissionFromBE = async (url: string, user: string, action: str
     });
 };
 
-export const generateStateKey = (action: string, resource: string, resourceAttributes: Record<string, any> = {}) => {
+export const generateStateKey = (action: string, resource: string | ReBACResourceSchema, resourceAttributes: Record<string, any> = {}) => {
   const sortedResourceAttributes = Object.keys(resourceAttributes)
     .sort()
     .reduce((obj, key) => {
@@ -41,5 +44,7 @@ export const generateStateKey = (action: string, resource: string, resourceAttri
   const resourceAttributeKey =
     resourceAttributes && Object.keys(resourceAttributes).length > 0 ? `;resourceAttributes:${JSON.stringify(sortedResourceAttributes)}` : '';
 
-  return `action:${action};resource:${resource}${userAttributeKey}${resourceAttributeKey}`;
+  const resourceKey = typeof resource === 'string' ? resource : `${resource.type}:${resource.key}`;
+
+  return `action:${action};resource:${resourceKey}${userAttributeKey}${resourceAttributeKey}`;
 };
