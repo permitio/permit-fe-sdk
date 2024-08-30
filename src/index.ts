@@ -15,7 +15,6 @@ export interface PermitCheckSchema {
   loadLocalStateBulk: (actionsResourcesList: ActionResourceSchema[]) => Promise<void>;
   reset: () => void;
 }
-}
 
 export interface CaslPermissionSchema {
   action: string;
