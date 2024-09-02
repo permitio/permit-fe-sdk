@@ -73,64 +73,170 @@ const getAbility = async (loggedInUser) => {
 };
 ```
 
-To utilize the POST Bulk endpoint, refer to the code below. In the following request, be aware that you can optionally
-include `resourceAttributes` for the permissions check. However, these attributes are specifically for ABAC permission modeling.
-If you're employing RBAC or ReBAC, simply omit them.
+### Understanding Access Control Models with `loadLocalStateBulk`
+
+When working with access control in your application, it's crucial to understand the differences between various policy models: Role-Based Access Control (RBAC), Attribute-Based Access Control (ABAC), and Relationship-Based Access Control (ReBAC). Each of these models has its own way of determining permissions, which affects how you should configure and pass data to the loadLocalStateBulk function in your application.
+
+#### Common Usage of loadLocalStateBulk
+
+The loadLocalStateBulk function allows you to load multiple permission checks at once, optimizing the performance of your application by reducing the number of backend calls. Below is a general example demonstrating how different access control models can be integrated into a single bulk request.
 
 ```javascript
-import { Ability } from '@casl/ability';
-import { Permit, permitState } from 'permit-fe-sdk';
+await permit.loadLocalStateBulk([
+  // RBAC example
+  { action: 'view', resource: 'statament' },
+  { action: 'view', resource: 'products' },
+  { action: 'delete', resource: 'file' },
 
-const getAbility = async (loggedInUser) => {
-  const permit = Permit({
-    loggedInUser: loggedInUser,
-    backendUrl: '/api/dashboardBulk',
-  });
-
-  await permit.loadLocalStateBulk([
-    { action: 'view', resource: 'statament' },
-    { action: 'view', resource: 'products' },
-    { action: 'delete', resource: 'file' },
-    { action: 'create', resource: 'document' },
-    {
-      action: 'view',
-      resource: 'files_for_poland_employees',
-      userAttributes: {
-        department: 'Engineering',
-        salary: '100K',
-      },
-      resourceAttributes: { country: 'PL' },
+  // ABAC example
+  {
+    action: 'view',
+    resource: 'files_for_poland_employees',
+    userAttributes: {
+      department: 'Engineering',
+      salary: '100K',
     },
-  ]);
+    resourceAttributes: { country: 'PL' },
+  },
 
-  const caslConfig = permitState.getCaslJson();
-
-  return caslConfig && caslConfig.length ? new Ability(caslConfig) : undefined;
-};
+  // ReBAC example
+  { action: 'create', resource: 'document:my_file.doc' },
+]);
 ```
 
-### Working with ReBAC
+Let's break this down into smaller policy-based chunks:
 
-ReBAC (Relationship-Based Access Control) allows permissions to be determined based on the relationships between users and resources. For example, you might want to check if a user is a member of a specific group before allowing access to a resource.
+#### Role-Based Access Control (RBAC)
 
-#### Example ReBAC Usage:
+RBAC assigns permissions to users based on their roles within an organization. This is a straightforward model where access rights are predetermined by the user's job function.
 
-To check permissions based on relationships, use the following format:
+##### Example RBAC Usage with `loadLocalStateBulk`
+
+For RBAC, you typically pass the action and resource without any additional attributes:
+
+```javascript
+await permit.loadLocalStateBulk([
+  { action: 'view', resource: 'statament' },
+  { action: 'view', resource: 'products' },
+  { action: 'delete', resource: 'file' },
+]);
+```
+
+In this example:
+
+- `action` represents the type of operation (e.g., 'view', 'delete').
+- `resource` represents the object being acted upon (e.g., 'file', 'products').
+
+#### Attribute-Based Access Control (ABAC)
+
+ABAC is more dynamic than RBAC. It grants access based on user attributes, resource attributes, and environment conditions. This model is particularly useful when access control needs to be fine-grained.
+
+##### Example ABAC Usage with loadLocalStateBulk
+
+For ABAC, you include additional userAttributes and resourceAttributes to specify the conditions under which access is granted:
+
+```javascript
+await permit.loadLocalStateBulk([
+  {
+    action: 'view',
+    resource: 'files_for_poland_employees',
+    userAttributes: {
+      department: 'Engineering',
+      salary: '100K',
+    },
+    resourceAttributes: { country: 'PL' },
+  },
+]);
+```
+
+In this example:
+
+- `userAttributes` defines attributes associated with the user, such as department or salary.
+- `resourceAttributes` specifies attributes tied to the resource, like the country of operation.
+
+#### Relationship-Based Access Control (ReBAC)
+
+ReBAC (Relationship-Based Access Control) determines access permissions based on the relationships between users and resources. This model is particularly useful when permissions need to reflect complex relationships, such as group memberships or ownership of specific resources.
+
+##### Example ReBAC Usage with `loadLocalStateBulk`
+
+In ReBAC, you not only specify the action and the resource but also include a resource instance key to identify the specific instance of the resource that the relationship pertains to. This key is essential to precisely define the access control based on the user's relationship to that particular instance.
+
+For example, consider a document management system where permissions are defined based on whether a user is the owner of a document or a member of a group that has access to it.
+
+```javascript
+await permit.loadLocalStateBulk([
+  {
+    action: 'create',
+    resource: 'document:my_file.doc', // `document` is the resource type, `my_file.doc` is the resource instance key
+  },
+]);
+```
+
+In this example:
+
+- `action` specifies the operation to be performed (e.g., 'create').
+- `resource` consists of two parts:
+  - `Resource type` (e.g., 'document')
+  - `Resource instance key` (e.g., 'my_file.doc')
+
+The resource instance key (`my_file.doc` in this case) identifies the specific document that the user is allowed to create or manage based on their relationship with it.
+
+To check permissions based on relationships in ReBAC, you can use the permit.check function. This function checks whether a user has the necessary relationship to perform an action on a resource instance.
+
+For example, to check if a user is a member of a specific group that has access to a resource:
+
+```javascript
+permit.check(userId, action, {
+  type: 'member_group', // Specifies the relationship type
+  key: group, // Specifies the particular group key
+});
+```
+
+Or, using shorthand object notation:
 
 ```javascript
 permit.check(userId, action, `member_group:${group}`);
 ```
 
-Or, using the shorthand object notation:
+By including the resource instance key and defining relationships precisely, ReBAC enables fine-grained control over who can perform what actions on specific resource instances based on their relationship with those resources.
+
+#### Integrating RBAC, ABAC, and ReBAC in a Single Request
+
+The flexibility of the loadLocalStateBulk function allows you to mix different access control models in a single request. This can be particularly powerful in applications that require a combination of role-based, attribute-based, and relationship-based access controls.
+
+##### Combined Example
+
+Here is how you can combine all three models in one bulk call:
 
 ```javascript
-permit.check(userId, action, {
-  type: 'member_group',
-  key: group,
-});
+await permit.loadLocalStateBulk([
+  // RBAC examples
+  { action: 'view', resource: 'statament' },
+  { action: 'view', resource: 'products' },
+  { action: 'delete', resource: 'file' },
+
+  // ABAC example
+  {
+    action: 'view',
+    resource: 'files_for_poland_employees',
+    userAttributes: {
+      department: 'Engineering',
+      salary: '100K',
+    },
+    resourceAttributes: { country: 'PL' },
+  },
+
+  // ReBAC example
+  { action: 'create', resource: 'document:my_file.doc' },
+]);
 ```
 
-Once you perform the checks, make sure you check if the current user is signed in and assign them the abilities returned.
+By passing a structured array to `loadLocalStateBulk`, you can efficiently manage permissions across different models without needing separate function calls for each model type.
+
+### Applying Abilities to the Signed-In User
+
+After performing the necessary policy checks, the next step is to ensure that the current user is authenticated. Once confirmed, you should assign the abilities returned from the checks to the user. This allows your application to enforce the correct permissions based on the user's access rights.
 
 ```javascript
 if (isSignedIn) {
