@@ -79,12 +79,12 @@ When working with access control in your application, it's crucial to understand
 
 #### Common Usage of loadLocalStateBulk
 
-The loadLocalStateBulk function allows you to load multiple permission checks at once, optimizing the performance of your application by reducing the number of backend calls. Below is a general example demonstrating how different access control models can be integrated into a single bulk request.
+The `loadLocalStateBulk` function allows you to load multiple permission checks at once, optimizing the performance of your application by reducing the number of backend calls. Below is a general example demonstrating how different access control models can be integrated into a single bulk request.
 
 ```javascript
 await permit.loadLocalStateBulk([
   // RBAC example
-  { action: 'view', resource: 'statament' },
+  { action: 'view', resource: 'statement' },
   { action: 'view', resource: 'products' },
   { action: 'delete', resource: 'file' },
 
@@ -116,7 +116,7 @@ For RBAC, you typically pass the action and resource without any additional attr
 
 ```javascript
 await permit.loadLocalStateBulk([
-  { action: 'view', resource: 'statament' },
+  { action: 'view', resource: 'statement' },
   { action: 'view', resource: 'products' },
   { action: 'delete', resource: 'file' },
 ]);
@@ -212,7 +212,7 @@ Here is how you can combine all three models in one bulk call:
 ```javascript
 await permit.loadLocalStateBulk([
   // RBAC examples
-  { action: 'view', resource: 'statament' },
+  { action: 'view', resource: 'statement' },
   { action: 'view', resource: 'products' },
   { action: 'delete', resource: 'file' },
 
