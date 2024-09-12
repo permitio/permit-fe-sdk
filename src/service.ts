@@ -1,24 +1,38 @@
-import axios from 'axios';
+import axios, { AxiosRequestHeaders } from 'axios';
 import { ActionResourceSchema, ReBACResourceSchema } from './types';
 import { permitState } from '.';
 
-export const getBulkPermissionFromBE = async (url: string, user: string, actionsResourcesList: ActionResourceSchema[]): Promise<boolean[]> => {
+export const getBulkPermissionFromBE = async (
+  url: string,
+  user: string,
+  actionsResourcesList: ActionResourceSchema[],
+  headers?: AxiosRequestHeaders,
+): Promise<boolean[]> => {
   const payload = actionsResourcesList.map((actionResource) => ({
     action: actionResource.action,
     resource: typeof actionResource.resource === 'string' ? actionResource.resource : `${actionResource.resource.type}:${actionResource.resource.key}`,
     resourceAttributes: actionResource.resourceAttributes || {},
   }));
-  
-  return await axios.post(`${url}?user=${user}`, { resourcesAndActions: payload }).then((response) => {
+
+  const config = headers ? { headers } : {};
+  return await axios.post(`${url}?user=${user}`, { resourcesAndActions: payload }, config).then((response) => {
     return response.data;
   });
 };
 
-export const getPermissionFromBE = async (url: string, user: string, action: string, resource: string | ReBACResourceSchema, defaultPermission: boolean): Promise<boolean> => {
+export const getPermissionFromBE = async (
+  url: string,
+  user: string,
+  action: string,
+  resource: string | ReBACResourceSchema,
+  defaultPermission: boolean,
+  headers?: AxiosRequestHeaders,
+): Promise<boolean> => {
   const resourceKey = typeof resource === 'string' ? resource : `${resource.type}:${resource.key}`;
-  
+  const config = headers ? { headers } : {};
+
   return await axios
-    .get(`${url}?user=${user}&action=${action}&resource=${resourceKey}`)
+    .get(`${url}?user=${user}&action=${action}&resource=${resourceKey}`, config)
     .then((response) => {
       return response.data.permitted;
     })

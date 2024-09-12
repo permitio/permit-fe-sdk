@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosRequestHeaders } from 'axios';
 
 // Interfaces
 
@@ -9,7 +9,12 @@ export interface PermitCheckSchema {
   defaultAnswerIfNotExist: boolean;
   state: PermitStateSchema;
   check: (action: string, resource: string | ReBACResourceSchema, userAttributes: Record<string, any>, resourceAttributes?: Record<string, any>) => boolean;
-  addKeyToState: (action: string, resource: string | ReBACResourceSchema, userAttributes: Record<string, any>, resourceAttributes?: Record<string, any>) => Promise<void>;
+  addKeyToState: (
+    action: string,
+    resource: string | ReBACResourceSchema,
+    userAttributes: Record<string, any>,
+    resourceAttributes?: Record<string, any>,
+  ) => Promise<void>;
   loadLocalState: (actionsResourcesList: ActionResourceSchema[]) => Promise<void>;
   getCaslJson: () => CaslPermissionSchema[];
   loadLocalStateBulk: (actionsResourcesList: ActionResourceSchema[]) => Promise<void>;
@@ -49,23 +54,38 @@ export type PermitProps = {
   userAttributes?: Record<string, any>;
   backendUrl: string;
   defaultAnswerIfNotExist?: boolean;
+  customRequestHeaders?: AxiosRequestHeaders;
 };
 
-const getBulkPermissionFromBE = async (url: string, user: string, actionsResourcesList: ActionResourceSchema[]): Promise<boolean[]> => {
+const getBulkPermissionFromBE = async (
+  url: string,
+  user: string,
+  actionsResourcesList: ActionResourceSchema[],
+  headers?: AxiosRequestHeaders,
+): Promise<boolean[]> => {
   const payload = actionsResourcesList.map(({ action, resource, userAttributes = {}, resourceAttributes = {} }) => ({
     action,
     resource: typeof resource === 'string' ? resource : `${resource.type}:${resource.key}`,
     userAttributes,
     resourceAttributes,
   }));
+  const config = headers ? { headers } : {};
 
-  const response = await axios.post(`${url}?user=${user}`, { resourcesAndActions: payload });
+  const response = await axios.post(`${url}?user=${user}`, { resourcesAndActions: payload }, config);
   return response.data.permittedList;
 };
 
-const getPermissionFromBE = async (url: string, user: string, action: string, resource: string, defaultPermission: boolean): Promise<boolean> => {
+const getPermissionFromBE = async (
+  url: string,
+  user: string,
+  action: string,
+  resource: string,
+  defaultPermission: boolean,
+  headers?: AxiosRequestHeaders,
+): Promise<boolean> => {
+  const config = headers ? { headers } : {};
   return await axios
-    .get(`${url}?user=${user}&action=${action}&resource=${resource}`)
+    .get(`${url}?user=${user}&action=${action}&resource=${resource}`, config)
     .then((response) => {
       return response.data.permitted;
     })
@@ -97,7 +117,7 @@ const generateStateKey = (action: string, resource: string | ReBACResourceSchema
   return `user:${userAttributeKey};action:${action};resource:${resourceKey}${resourceAttributeKey}`;
 };
 
-export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultAnswerIfNotExist = false }: PermitProps) => {
+export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultAnswerIfNotExist = false, customRequestHeaders }: PermitProps) => {
   if (!loggedInUser) {
     throw new Error('loggedInUser is required');
   }
@@ -120,8 +140,9 @@ export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultA
     if (isInitialized) return;
     isInitialized = true;
     for (const actionResource of actionsResourcesList) {
-      const resourceKey = typeof actionResource.resource === 'string' ? actionResource.resource : `${actionResource.resource.type}:${actionResource.resource.key}`;
-      const permission = await getPermissionFromBE(backendUrl, loggedInUser, actionResource.action, resourceKey, defaultAnswerIfNotExist);
+      const resourceKey =
+        typeof actionResource.resource === 'string' ? actionResource.resource : `${actionResource.resource.type}:${actionResource.resource.key}`;
+      const permission = await getPermissionFromBE(backendUrl, loggedInUser, actionResource.action, resourceKey, defaultAnswerIfNotExist, customRequestHeaders);
       await updatePermissionState(actionResource, permission);
     }
   };
@@ -129,7 +150,7 @@ export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultA
   const loadLocalStateBulk = async (actionsResourcesList: ActionResourceSchema[]) => {
     if (isInitialized) return;
     isInitialized = true;
-    const permittedList = await getBulkPermissionFromBE(backendUrl, loggedInUser, actionsResourcesList);
+    const permittedList = await getBulkPermissionFromBE(backendUrl, loggedInUser, actionsResourcesList, customRequestHeaders);
     for (const [i, actionResource] of actionsResourcesList.entries()) {
       await updatePermissionState(actionResource, permittedList[i]);
     }
@@ -146,7 +167,7 @@ export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultA
 
   const addKeyToState = async (action: string, resource: string | ReBACResourceSchema, resourceAttributes: Record<string, any> = {}) => {
     const resourceKey = typeof resource === 'string' ? resource : `${resource.type}:${resource.key}`;
-    const permission = await getPermissionFromBE(backendUrl, loggedInUser, action, resourceKey, defaultAnswerIfNotExist);
+    const permission = await getPermissionFromBE(backendUrl, loggedInUser, action, resourceKey, defaultAnswerIfNotExist, customRequestHeaders);
     await updatePermissionState({ action, resource, userAttributes: permitState.userAttributes, resourceAttributes }, permission);
   };
 
@@ -154,7 +175,7 @@ export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultA
     permitLocalState = {};
     permitCaslState = [];
     isInitialized = false;
-  }
+  };
 
   permitState = {
     addKeyToState,
@@ -167,7 +188,7 @@ export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultA
     userAttributes,
     check,
     getCaslJson,
-    reset
+    reset,
   };
 
   return permitState;
