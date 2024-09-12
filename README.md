@@ -73,6 +73,19 @@ const getAbility = async (loggedInUser) => {
 };
 ```
 
+#### Custom request headers
+
+If needed, the SDK allows you to pass custom headers to the backend. This can be useful for passing authentication tokens or other necessary information.
+
+```javascript
+const permit = Permit({
+  loggedInUser: loggedInUser,
+  backendUrl: '/api/your-endpoint',
+  customRequestHeaders: {
+    Authorization: 'Bearer your-token',
+  });
+```
+
 ### Understanding Access Control Models with `loadLocalStateBulk`
 
 When working with access control in your application, it's crucial to understand the differences between various policy models: Role-Based Access Control (RBAC), Attribute-Based Access Control (ABAC), and Relationship-Based Access Control (ReBAC). Each of these models has its own way of determining permissions, which affects how you should configure and pass data to the loadLocalStateBulk function in your application.
