@@ -95,6 +95,16 @@ When working with access control in your application, it's crucial to understand
 The `loadLocalStateBulk` function allows you to load multiple permission checks at once, optimizing the performance of your application by reducing the number of backend calls. Below is a general example demonstrating how different access control models can be integrated into a single bulk request.
 
 ```javascript
+const getAbility = async (loggedInUser) => {
+  const permit = Permit({
+    loggedInUser: loggedInUser, // This is the unique userId from your authentication provider in the current session.
+    backendUrl: '/api/your-endpoint',
+    // Pass ABAC user attributes
+    userAttributes: {user_attr1: "attr_value"},
+  });
+
+
+
 await permit.loadLocalStateBulk([
   // RBAC example
   { action: 'view', resource: 'statement' },
