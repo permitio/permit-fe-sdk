@@ -1,6 +1,6 @@
 {
   "name": "permit-fe-sdk",
-  "version": "1.5.0",
+  "version": "0.0.0-ci",
   "description": "",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
