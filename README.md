@@ -2,7 +2,8 @@
 
 ## Overview
 
-This package lets you easily integrate Permit.io advanced permissions into your frontend application. It is integrated with [CASL](https://casl.js.org/v5/en/) and so can be used with any frontend framework.
+This package lets you easily integrate Permit.io advanced permissions into your frontend application. It is integrated
+with [CASL](https://casl.js.org/v5/en/) and so can be used with any frontend framework.
 
 ## Installation
 
@@ -27,13 +28,14 @@ yarn add permit-fe-sdk
 #### 3. **Available Endpoints**
 
 - **GET Endpoint**:
-  - Purpose: Fetch permissions for a specific resource and action associated with the current user.
+    - Purpose: Fetch permissions for a specific resource and action associated with the current user.
 - **POST Endpoint (Recommended)**:
-  - Purpose: Retrieve permissions in bulk for multiple resources and actions for the current user.
+    - Purpose: Retrieve permissions in bulk for multiple resources and actions for the current user.
 
 #### 4. **Recommendation**
 
-- Using the POST endpoint is preferable as it reduces the number of requests between the frontend and backend, offering a more efficient data retrieval process.
+- Using the POST endpoint is preferable as it reduces the number of requests between the frontend and backend, offering
+  a more efficient data retrieval process.
 
 ### Using the SDK in Your Frontend
 
@@ -44,11 +46,13 @@ yarn add permit-fe-sdk
 
 #### Integration with Other Frontend Frameworks
 
-If you're working with a different frontend framework, consult the [CASL documentation](https://casl.js.org/v5/en/guide/intro). It provides guidance on importing data into CASL ability. This SDK can then help generate the necessary data for CASL.
+If you're working with a different frontend framework, consult
+the [CASL documentation](https://casl.js.org/v5/en/guide/intro). It provides guidance on importing data into CASL
+ability. This SDK can then help generate the necessary data for CASL.
 
 #### Integration Guide for React:
 
-You can create a react component called an `AbilityLoader` to handle this:
+You can create a React component called an `AbilityLoader` to handle this:
 
 ```javascript
 import { Ability } from '@casl/ability';
@@ -56,7 +60,8 @@ import { Permit, permitState } from 'permit-fe-sdk';
 
 const getAbility = async (loggedInUser) => {
   const permit = Permit({
-    loggedInUser: loggedInUser, // This is the unique userId from your authentication provider in the current session.
+    // This is the unique userId from your authentication provider in the current session.
+    loggedInUser: loggedInUser, 
     backendUrl: '/api/your-endpoint',
   });
 
@@ -75,7 +80,8 @@ const getAbility = async (loggedInUser) => {
 
 #### Custom request headers
 
-If needed, the SDK allows you to pass custom headers to the backend. This can be useful for passing authentication tokens or other necessary information.
+If needed, the SDK allows you to pass custom headers to the backend. This can be useful for passing authentication
+tokens or other necessary information.
 
 ```javascript
 const permit = Permit({
@@ -83,55 +89,78 @@ const permit = Permit({
   backendUrl: '/api/your-endpoint',
   customRequestHeaders: {
     Authorization: 'Bearer your-token',
-  });
+  }});
 ```
+
+#### Axios configuration (CORS, timeouts, etc.)
+
+For advanced use cases like CORS with credentials or custom timeouts, you can pass any [Axios request config](https://axios-http.com/docs/req_config) options:
+
+```javascript
+const permit = Permit({
+  loggedInUser: loggedInUser,
+  backendUrl: '/api/your-endpoint',
+  axiosConfig: {
+    withCredentials: true,  // Enable CORS credentials
+    timeout: 10000,         // Request timeout in ms
+  },
+});
+```
+
+You can combine `axiosConfig` with `customRequestHeaders` - both will be merged, with `customRequestHeaders` taking precedence for any overlapping header keys.
 
 ### Understanding Access Control Models with `loadLocalStateBulk`
 
-When working with access control in your application, it's crucial to understand the differences between various policy models: Role-Based Access Control (RBAC), Attribute-Based Access Control (ABAC), and Relationship-Based Access Control (ReBAC). Each of these models has its own way of determining permissions, which affects how you should configure and pass data to the loadLocalStateBulk function in your application.
+When working with access control in your application, it's crucial to understand the differences between various policy
+models: Role-Based Access Control (RBAC), Attribute-Based Access Control (ABAC), and Relationship-Based Access Control (
+ReBAC). Each of these models has its own way of determining permissions, which affects how you should configure and pass
+data to the loadLocalStateBulk function in your application.
 
 #### Common Usage of loadLocalStateBulk
 
-The `loadLocalStateBulk` function allows you to load multiple permission checks at once, optimizing the performance of your application by reducing the number of backend calls. Below is a general example demonstrating how different access control models can be integrated into a single bulk request.
+The `loadLocalStateBulk` function allows you to load multiple permission checks at once, optimizing the performance of
+your application by reducing the number of backend calls. Below is a general example demonstrating how different access
+control models can be integrated into a single bulk request.
 
 ```javascript
 const getAbility = async (loggedInUser) => {
   const permit = Permit({
-    loggedInUser: loggedInUser, // This is the unique userId from your authentication provider in the current session.
+    // This is the unique userId from your authentication provider in the current session.
+    loggedInUser: loggedInUser, 
     backendUrl: '/api/your-endpoint',
-    // Pass ABAC user attributes
-    userAttributes: {user_attr1: "attr_value"},
+    // Pass ABAC user attributes.
+    userAttributes: { user_attr1: 'attr_value' },
   });
 
+  await permit.loadLocalStateBulk([
+    // RBAC example
+    { action: 'view', resource: 'statement' },
+    { action: 'view', resource: 'products' },
+    { action: 'delete', resource: 'file' },
 
-
-await permit.loadLocalStateBulk([
-  // RBAC example
-  { action: 'view', resource: 'statement' },
-  { action: 'view', resource: 'products' },
-  { action: 'delete', resource: 'file' },
-
-  // ABAC example
-  {
-    action: 'view',
-    resource: 'files_for_poland_employees',
-    userAttributes: {
-      department: 'Engineering',
-      salary: '100K',
+    // ABAC example
+    {
+      action: 'view',
+      resource: 'files_for_poland_employees',
+      userAttributes: {
+        department: 'Engineering',
+        salary: '100K',
+      },
+      resourceAttributes: { country: 'PL' },
     },
-    resourceAttributes: { country: 'PL' },
-  },
 
-  // ReBAC example
-  { action: 'create', resource: 'document:my_file.doc' },
-]);
+    // ReBAC example
+    { action: 'create', resource: 'document:my_file.doc' },
+  ]);
+};
 ```
 
 Let's break this down into smaller policy-based chunks:
 
 #### Role-Based Access Control (RBAC)
 
-RBAC assigns permissions to users based on their roles within an organization. This is a straightforward model where access rights are predetermined by the user's job function.
+RBAC assigns permissions to users based on their roles within an organization. This is a straightforward model where
+access rights are predetermined by the user's job function.
 
 ##### Example RBAC Usage with `loadLocalStateBulk`
 
@@ -152,11 +181,13 @@ In this example:
 
 #### Attribute-Based Access Control (ABAC)
 
-ABAC is more dynamic than RBAC. It grants access based on user attributes, resource attributes, and environment conditions. This model is particularly useful when access control needs to be fine-grained.
+ABAC is more dynamic than RBAC. It grants access based on user attributes, resource attributes, and environment
+conditions. This model is particularly useful when access control needs to be fine-grained.
 
 ##### Example ABAC Usage with loadLocalStateBulk
 
-For ABAC, you include additional userAttributes and resourceAttributes to specify the conditions under which access is granted:
+For ABAC, you include additional userAttributes and resourceAttributes to specify the conditions under which access is
+granted:
 
 ```javascript
 await permit.loadLocalStateBulk([
@@ -179,13 +210,18 @@ In this example:
 
 #### Relationship-Based Access Control (ReBAC)
 
-ReBAC (Relationship-Based Access Control) determines access permissions based on the relationships between users and resources. This model is particularly useful when permissions need to reflect complex relationships, such as group memberships or ownership of specific resources.
+ReBAC (Relationship-Based Access Control) determines access permissions based on the relationships between users and
+resources. This model is particularly useful when permissions need to reflect complex relationships, such as group
+memberships or ownership of specific resources.
 
 ##### Example ReBAC Usage with `loadLocalStateBulk`
 
-In ReBAC, you not only specify the action and the resource but also include a resource instance key to identify the specific instance of the resource that the relationship pertains to. This key is essential to precisely define the access control based on the user's relationship to that particular instance.
+In ReBAC, you not only specify the action and the resource but also include a resource instance key to identify the
+specific instance of the resource that the relationship pertains to. This key is essential to precisely define the
+access control based on the user's relationship to that particular instance.
 
-For example, consider a document management system where permissions are defined based on whether a user is the owner of a document or a member of a group that has access to it.
+For example, consider a document management system where permissions are defined based on whether a user is the owner of
+a document or a member of a group that has access to it.
 
 ```javascript
 await permit.loadLocalStateBulk([
@@ -200,12 +236,14 @@ In this example:
 
 - `action` specifies the operation to be performed (e.g., 'create').
 - `resource` consists of two parts:
-  - `Resource type` (e.g., 'document')
-  - `Resource instance key` (e.g., 'my_file.doc')
+    - `Resource type` (e.g., 'document')
+    - `Resource instance key` (e.g., 'my_file.doc')
 
-The resource instance key (`my_file.doc` in this case) identifies the specific document that the user is allowed to create or manage based on their relationship with it.
+The resource instance key (`my_file.doc` in this case) identifies the specific document that the user is allowed to
+create or manage based on their relationship with it.
 
-To check permissions based on relationships in ReBAC, you can use the permit.check function. This function checks whether a user has the necessary relationship to perform an action on a resource instance.
+To check permissions based on relationships in ReBAC, you can use the permit.check function. This function checks
+whether a user has the necessary relationship to perform an action on a resource instance.
 
 For example, to check if a user is a member of a specific group that has access to a resource:
 
@@ -222,11 +260,14 @@ Or, using shorthand object notation:
 permit.check(userId, action, `member_group:${group}`);
 ```
 
-By including the resource instance key and defining relationships precisely, ReBAC enables fine-grained control over who can perform what actions on specific resource instances based on their relationship with those resources.
+By including the resource instance key and defining relationships precisely, ReBAC enables fine-grained control over who
+can perform what actions on specific resource instances based on their relationship with those resources.
 
 #### Integrating RBAC, ABAC, and ReBAC in a Single Request
 
-The flexibility of the loadLocalStateBulk function allows you to mix different access control models in a single request. This can be particularly powerful in applications that require a combination of role-based, attribute-based, and relationship-based access controls.
+The flexibility of the loadLocalStateBulk function allows you to mix different access control models in a single
+request. This can be particularly powerful in applications that require a combination of role-based, attribute-based,
+and relationship-based access controls.
 
 ##### Combined Example
 
@@ -255,11 +296,14 @@ await permit.loadLocalStateBulk([
 ]);
 ```
 
-By passing a structured array to `loadLocalStateBulk`, you can efficiently manage permissions across different models without needing separate function calls for each model type.
+By passing a structured array to `loadLocalStateBulk`, you can efficiently manage permissions across different models
+without needing separate function calls for each model type.
 
 ### Applying Abilities to the Signed-In User
 
-After performing the necessary policy checks, the next step is to ensure that the current user is authenticated. Once confirmed, you should assign the abilities returned from the checks to the user. This allows your application to enforce the correct permissions based on the user's access rights.
+After performing the necessary policy checks, the next step is to ensure that the current user is authenticated. Once
+confirmed, you should assign the abilities returned from the checks to the user. This allows your application to enforce
+the correct permissions based on the user's access rights.
 
 ```javascript
 if (isSignedIn) {
@@ -272,4 +316,5 @@ if (isSignedIn) {
 If you would like to see how the normal or bulk local states should be handled in your API - refer to the `demo_server`
 folder for a sample server configuration.
 
-For any questions, please reach out to us in the [Permit community](https://permit-io.slack.com/join/shared_invite/zt-nz6yjgnp-RlP9rtOPwO0n0aH_vLbmBQ).
+For any questions, please reach out to us in
+the [Permit community](https://permit-io.slack.com/join/shared_invite/zt-nz6yjgnp-RlP9rtOPwO0n0aH_vLbmBQ).
