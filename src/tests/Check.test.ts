@@ -55,7 +55,7 @@ describe('Permission Service', () => {
             { action: 'write', resource: 'file', resourceAttributes: {} },
           ],
         },
-        {},
+        { headers: {} },
       );
       expect(result).toEqual([true, false, true]);
     });
@@ -75,7 +75,7 @@ describe('Permission Service', () => {
             { action: 'write', resource: 'member_group:group2', resourceAttributes: {} },
           ],
         },
-        {},
+        { headers: {} },
       );
       expect(result).toEqual([true, true]);
     });
@@ -95,7 +95,7 @@ describe('Permission Service', () => {
             { action: 'write', resource: 'member_group:group2', resourceAttributes: {} },
           ],
         },
-        {},
+        { headers: {} },
       );
       expect(result).toEqual([true, false]);
     });
@@ -130,6 +130,7 @@ describe('Permission Service', () => {
         },
         {
           withCredentials: true,
+          headers: {},
         },
       );
     });
@@ -162,14 +163,14 @@ describe('Permission Service', () => {
     it('should send request without attributes for traditional resource', async () => {
       mockedAxios.get.mockResolvedValueOnce({ data: { permitted: true } });
       const result = await getPermissionFromBE('http://example.com', 'user1', 'read', 'file', true);
-      expect(mockedAxios.get).toHaveBeenCalledWith('http://example.com?user=user1&action=read&resource=file', {});
+      expect(mockedAxios.get).toHaveBeenCalledWith('http://example.com?user=user1&action=read&resource=file', { headers: {} });
       expect(result).toBe(true);
     });
 
     it('should send request without attributes for ReBAC resource', async () => {
       mockedAxios.get.mockResolvedValueOnce({ data: { permitted: true } });
       const result = await getPermissionFromBE('http://example.com', 'user1', 'read', { type: 'member_group', key: 'group1' }, true);
-      expect(mockedAxios.get).toHaveBeenCalledWith('http://example.com?user=user1&action=read&resource=member_group:group1', {});
+      expect(mockedAxios.get).toHaveBeenCalledWith('http://example.com?user=user1&action=read&resource=member_group:group1', { headers: {} });
       expect(result).toBe(true);
     });
 
@@ -188,6 +189,7 @@ describe('Permission Service', () => {
 
       expect(mockedAxios.get).toHaveBeenCalledWith('http://example.com?user=user1&action=read&resource=member_group:group1', {
         withCredentials: true,
+        headers: {},
       });
     });
 

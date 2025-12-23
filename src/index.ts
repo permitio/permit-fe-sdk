@@ -73,7 +73,7 @@ const getBulkPermissionFromBE = async (
   }));
   const config: AxiosRequestConfig = {
     ...axiosConfig,
-    ...(headers && { headers }),
+    headers: { ...axiosConfig?.headers, ...headers },
   };
 
   const response = await axios.post(`${url}?user=${user}`, { resourcesAndActions: payload }, config);
@@ -91,7 +91,7 @@ const getPermissionFromBE = async (
 ): Promise<boolean> => {
   const config: AxiosRequestConfig = {
     ...axiosConfig,
-    ...(headers && { headers }),
+    headers: { ...axiosConfig?.headers, ...headers },
   };
   return await axios
     .get(`${url}?user=${user}&action=${action}&resource=${resource}`, config)
