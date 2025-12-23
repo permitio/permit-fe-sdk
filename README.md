@@ -61,7 +61,7 @@ import { Permit, permitState } from 'permit-fe-sdk';
 const getAbility = async (loggedInUser) => {
   const permit = Permit({
     // This is the unique userId from your authentication provider in the current session.
-    loggedInUser: loggedInUser, 
+    loggedInUser: loggedInUser,
     backendUrl: '/api/your-endpoint',
   });
 
@@ -89,12 +89,14 @@ const permit = Permit({
   backendUrl: '/api/your-endpoint',
   customRequestHeaders: {
     Authorization: 'Bearer your-token',
-  }});
+  }
+});
 ```
 
 #### Axios configuration (CORS, timeouts, etc.)
 
-For advanced use cases like CORS with credentials or custom timeouts, you can pass any [Axios request config](https://axios-http.com/docs/req_config) options:
+For advanced use cases like CORS with credentials or custom timeouts, you can pass
+any [Axios request config](https://axios-http.com/docs/req_config) options:
 
 ```javascript
 const permit = Permit({
@@ -107,7 +109,8 @@ const permit = Permit({
 });
 ```
 
-You can combine `axiosConfig` with `customRequestHeaders` - both will be merged, with `customRequestHeaders` taking precedence for any overlapping header keys.
+You can combine `axiosConfig` with `customRequestHeaders` - both will be merged, with `customRequestHeaders` taking
+precedence for any overlapping header keys.
 
 ### Understanding Access Control Models with `loadLocalStateBulk`
 
@@ -126,7 +129,7 @@ control models can be integrated into a single bulk request.
 const getAbility = async (loggedInUser) => {
   const permit = Permit({
     // This is the unique userId from your authentication provider in the current session.
-    loggedInUser: loggedInUser, 
+    loggedInUser: loggedInUser,
     backendUrl: '/api/your-endpoint',
     // Pass ABAC user attributes.
     userAttributes: { user_attr1: 'attr_value' },

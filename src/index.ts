@@ -151,7 +151,15 @@ export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultA
     for (const actionResource of actionsResourcesList) {
       const resourceKey =
         typeof actionResource.resource === 'string' ? actionResource.resource : `${actionResource.resource.type}:${actionResource.resource.key}`;
-      const permission = await getPermissionFromBE(backendUrl, loggedInUser, actionResource.action, resourceKey, defaultAnswerIfNotExist, customRequestHeaders, axiosConfig);
+      const permission = await getPermissionFromBE(
+        backendUrl,
+        loggedInUser,
+        actionResource.action,
+        resourceKey,
+        defaultAnswerIfNotExist,
+        customRequestHeaders,
+        axiosConfig,
+      );
       await updatePermissionState(actionResource, permission);
     }
   };
