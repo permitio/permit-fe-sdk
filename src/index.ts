@@ -1,4 +1,4 @@
-import axios, { AxiosRequestHeaders } from 'axios';
+import axios, { AxiosRequestConfig, AxiosRequestHeaders } from 'axios';
 
 // Interfaces
 
@@ -55,6 +55,7 @@ export type PermitProps = {
   backendUrl: string;
   defaultAnswerIfNotExist?: boolean;
   customRequestHeaders?: AxiosRequestHeaders;
+  axiosConfig?: AxiosRequestConfig;
 };
 
 const getBulkPermissionFromBE = async (
@@ -62,6 +63,7 @@ const getBulkPermissionFromBE = async (
   user: string,
   actionsResourcesList: ActionResourceSchema[],
   headers?: AxiosRequestHeaders,
+  axiosConfig?: AxiosRequestConfig,
 ): Promise<boolean[]> => {
   const payload = actionsResourcesList.map(({ action, resource, userAttributes = {}, resourceAttributes = {} }) => ({
     action,
@@ -69,7 +71,10 @@ const getBulkPermissionFromBE = async (
     userAttributes,
     resourceAttributes,
   }));
-  const config = headers ? { headers } : {};
+  const config: AxiosRequestConfig = {
+    ...axiosConfig,
+    ...(headers && { headers }),
+  };
 
   const response = await axios.post(`${url}?user=${user}`, { resourcesAndActions: payload }, config);
   return response.data.permittedList;
@@ -82,8 +87,12 @@ const getPermissionFromBE = async (
   resource: string,
   defaultPermission: boolean,
   headers?: AxiosRequestHeaders,
+  axiosConfig?: AxiosRequestConfig,
 ): Promise<boolean> => {
-  const config = headers ? { headers } : {};
+  const config: AxiosRequestConfig = {
+    ...axiosConfig,
+    ...(headers && { headers }),
+  };
   return await axios
     .get(`${url}?user=${user}&action=${action}&resource=${resource}`, config)
     .then((response) => {
@@ -117,7 +126,7 @@ const generateStateKey = (action: string, resource: string | ReBACResourceSchema
   return `user:${userAttributeKey};action:${action};resource:${resourceKey}${resourceAttributeKey}`;
 };
 
-export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultAnswerIfNotExist = false, customRequestHeaders }: PermitProps) => {
+export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultAnswerIfNotExist = false, customRequestHeaders, axiosConfig }: PermitProps) => {
   if (!loggedInUser) {
     throw new Error('loggedInUser is required');
   }
@@ -142,7 +151,7 @@ export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultA
     for (const actionResource of actionsResourcesList) {
       const resourceKey =
         typeof actionResource.resource === 'string' ? actionResource.resource : `${actionResource.resource.type}:${actionResource.resource.key}`;
-      const permission = await getPermissionFromBE(backendUrl, loggedInUser, actionResource.action, resourceKey, defaultAnswerIfNotExist, customRequestHeaders);
+      const permission = await getPermissionFromBE(backendUrl, loggedInUser, actionResource.action, resourceKey, defaultAnswerIfNotExist, customRequestHeaders, axiosConfig);
       await updatePermissionState(actionResource, permission);
     }
   };
@@ -150,7 +159,7 @@ export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultA
   const loadLocalStateBulk = async (actionsResourcesList: ActionResourceSchema[]) => {
     if (isInitialized) return;
     isInitialized = true;
-    const permittedList = await getBulkPermissionFromBE(backendUrl, loggedInUser, actionsResourcesList, customRequestHeaders);
+    const permittedList = await getBulkPermissionFromBE(backendUrl, loggedInUser, actionsResourcesList, customRequestHeaders, axiosConfig);
     for (const [i, actionResource] of actionsResourcesList.entries()) {
       await updatePermissionState(actionResource, permittedList[i]);
     }
@@ -167,7 +176,7 @@ export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultA
 
   const addKeyToState = async (action: string, resource: string | ReBACResourceSchema, resourceAttributes: Record<string, any> = {}) => {
     const resourceKey = typeof resource === 'string' ? resource : `${resource.type}:${resource.key}`;
-    const permission = await getPermissionFromBE(backendUrl, loggedInUser, action, resourceKey, defaultAnswerIfNotExist, customRequestHeaders);
+    const permission = await getPermissionFromBE(backendUrl, loggedInUser, action, resourceKey, defaultAnswerIfNotExist, customRequestHeaders, axiosConfig);
     await updatePermissionState({ action, resource, userAttributes: permitState.userAttributes, resourceAttributes }, permission);
   };
 

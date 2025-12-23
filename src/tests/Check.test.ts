@@ -116,6 +116,46 @@ describe('Permission Service', () => {
         },
       );
     });
+
+    it('should forward axiosConfig when supplied', async () => {
+      mockedAxios.post.mockResolvedValueOnce({ data: [true] });
+      await getBulkPermissionFromBE('http://example.com', 'user1', [{ action: 'read', resource: { type: 'member_group', key: 'group1' } }], undefined, {
+        withCredentials: true,
+      });
+
+      expect(mockedAxios.post).toHaveBeenCalledWith(
+        'http://example.com?user=user1',
+        {
+          resourcesAndActions: [{ action: 'read', resource: 'member_group:group1', resourceAttributes: {} }],
+        },
+        {
+          withCredentials: true,
+        },
+      );
+    });
+
+    it('should forward both headers and axiosConfig when supplied', async () => {
+      mockedAxios.post.mockResolvedValueOnce({ data: [true] });
+      await getBulkPermissionFromBE(
+        'http://example.com',
+        'user1',
+        [{ action: 'read', resource: { type: 'member_group', key: 'group1' } }],
+        { Authorization: 'Bearer token123' },
+        { withCredentials: true, timeout: 5000 },
+      );
+
+      expect(mockedAxios.post).toHaveBeenCalledWith(
+        'http://example.com?user=user1',
+        {
+          resourcesAndActions: [{ action: 'read', resource: 'member_group:group1', resourceAttributes: {} }],
+        },
+        {
+          withCredentials: true,
+          timeout: 5000,
+          headers: { Authorization: 'Bearer token123' },
+        },
+      );
+    });
   });
 
   describe('getPermissionFromBE', () => {
@@ -141,40 +181,33 @@ describe('Permission Service', () => {
         headers: { Authorization: 'Bearer token123' },
       });
     });
+
+    it('should forward axiosConfig when supplied', async () => {
+      mockedAxios.get.mockResolvedValueOnce({ data: { permitted: true } });
+      await getPermissionFromBE('http://example.com', 'user1', 'read', { type: 'member_group', key: 'group1' }, true, undefined, { withCredentials: true });
+
+      expect(mockedAxios.get).toHaveBeenCalledWith('http://example.com?user=user1&action=read&resource=member_group:group1', {
+        withCredentials: true,
+      });
+    });
+
+    it('should forward both headers and axiosConfig when supplied', async () => {
+      mockedAxios.get.mockResolvedValueOnce({ data: { permitted: true } });
+      await getPermissionFromBE(
+        'http://example.com',
+        'user1',
+        'read',
+        { type: 'member_group', key: 'group1' },
+        true,
+        { Authorization: 'Bearer token123' },
+        { withCredentials: true, timeout: 5000 },
+      );
+
+      expect(mockedAxios.get).toHaveBeenCalledWith('http://example.com?user=user1&action=read&resource=member_group:group1', {
+        withCredentials: true,
+        timeout: 5000,
+        headers: { Authorization: 'Bearer token123' },
+      });
+    });
   });
 });
-
-// Failing tests - uncomment to check
-
-// describe('Permission Service Negative Tests', () => {
-//   describe('generateStateKey', () => {
-//     it('should throw an error for ReBAC resource without key', () => {
-//       permitState.userAttributes = {};
-//       expect(() => generateStateKey('read', { type: 'member_group', key: '' })).toThrow('Invalid ReBAC resource: missing key');
-//     });
-
-//     it('should throw an error for ReBAC resource without type', () => {
-//       permitState.userAttributes = {};
-//       expect(() => generateStateKey('read', { type: '', key: 'group1' })).toThrow('Invalid ReBAC resource: missing type');
-//     });
-//   });
-
-//   describe('getPermissionFromBE', () => {
-//     it('should handle invalid ReBAC resource with missing key', async () => {
-//       mockedAxios.get.mockRejectedValueOnce(new Error('Invalid resource format'));
-//       await expect(getPermissionFromBE('http://example.com', 'user1', 'read', { type: 'member_group', key: '' }, true))
-//         .rejects
-//         .toThrow('Invalid resource format');
-//     });
-//   });
-
-//   describe('getBulkPermissionFromBE', () => {
-//     it('should handle incorrectly formatted ReBAC resource', async () => {
-//       permitState.userAttributes = {};
-//       mockedAxios.post.mockRejectedValueOnce(new Error('Invalid resource format'));
-//       await expect(getBulkPermissionFromBE('http://example.com', 'user1', [
-//         { action: 'read', resource: { type: '', key: 'group1' } },
-//       ])).rejects.toThrow('Invalid resource format');
-//     });
-//   });
-// });
