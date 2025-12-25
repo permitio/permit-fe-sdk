@@ -93,6 +93,9 @@ const permit = Permit({
 });
 ```
 
+> **Note:** `customRequestHeaders` is deprecated and will be removed in the next major version.
+> Headers will be configured via `axiosConfig.headers` instead. See the migration guide below.
+
 #### Axios configuration (CORS, timeouts, etc.)
 
 For advanced use cases like CORS with credentials or custom timeouts, you can pass
@@ -109,8 +112,31 @@ const permit = Permit({
 });
 ```
 
-You can combine `axiosConfig` with `customRequestHeaders` - both will be merged, with `customRequestHeaders` taking
-precedence for any overlapping header keys.
+> **Important:** Currently, `axiosConfig.headers` is **not supported** - any headers passed via `axiosConfig` will be
+> ignored. You must use `customRequestHeaders` for custom headers in the current version.
+>
+> **In the next major version**, `customRequestHeaders` will be removed and headers will be configured via
+> `axiosConfig.headers`. To prepare for this migration:
+>
+> ```javascript
+> // Current version (use customRequestHeaders for headers)
+> const permit = Permit({
+>   loggedInUser: loggedInUser,
+>   backendUrl: '/api/your-endpoint',
+>   customRequestHeaders: { Authorization: 'Bearer token' },
+>   axiosConfig: { withCredentials: true },
+> });
+>
+> // Next major version (headers via axiosConfig)
+> const permit = Permit({
+>   loggedInUser: loggedInUser,
+>   backendUrl: '/api/your-endpoint',
+>   axiosConfig: {
+>     headers: { Authorization: 'Bearer token' },
+>     withCredentials: true,
+>   },
+> });
+> ```
 
 ### Understanding Access Control Models with `loadLocalStateBulk`
 
