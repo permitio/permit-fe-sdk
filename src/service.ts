@@ -2,6 +2,11 @@ import axios, { AxiosRequestConfig, AxiosRequestHeaders } from 'axios';
 import { ActionResourceSchema, ReBACResourceSchema } from './types';
 import { permitState } from '.';
 
+/**
+ * Fetch permissions in bulk from the backend.
+ * @deprecated This function will be removed in the next major version.
+ * Use the `Permit` factory and its `loadLocalStateBulk` method instead.
+ */
 export const getBulkPermissionFromBE = async (
   url: string,
   user: string,
@@ -26,6 +31,11 @@ export const getBulkPermissionFromBE = async (
   });
 };
 
+/**
+ * Fetch a single permission from the backend.
+ * @deprecated This function will be removed in the next major version.
+ * Use the `Permit` factory and its `loadLocalState` or `addKeyToState` methods instead.
+ */
 export const getPermissionFromBE = async (
   url: string,
   user: string,
@@ -58,6 +68,11 @@ export const getPermissionFromBE = async (
     });
 };
 
+/**
+ * Generate a unique key for storing permission state.
+ * @deprecated This internal utility will be removed in the next major version.
+ * Use the `Permit` factory methods which handle state management internally.
+ */
 export const generateStateKey = (action: string, resource: string | ReBACResourceSchema, resourceAttributes: Record<string, any> = {}) => {
   const sortedResourceAttributes = Object.keys(resourceAttributes)
     .sort()

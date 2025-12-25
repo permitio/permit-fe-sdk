@@ -345,5 +345,28 @@ if (isSignedIn) {
 If you would like to see how the normal or bulk local states should be handled in your API - refer to the `demo_server`
 folder for a sample server configuration.
 
+## Deprecation Notices
+
+### Deprecated exports from `service.ts`
+
+The following functions exported from `permit-fe-sdk/service` are **deprecated** and will be removed in the next major version:
+
+- `getBulkPermissionFromBE` - Use the `Permit` instance methods instead
+- `getPermissionFromBE` - Use the `Permit` instance methods instead
+- `generateStateKey` - Internal utility, will be made private
+
+These functions were originally exposed for advanced use cases but are now considered internal implementation details.
+Please migrate to using the `Permit()` factory function and its returned methods (`loadLocalState`, `loadLocalStateBulk`, `check`, etc.).
+
+```javascript
+// Deprecated approach (do not use)
+import { getBulkPermissionFromBE } from 'permit-fe-sdk/service';
+
+// Recommended approach
+import { Permit } from 'permit-fe-sdk';
+const permit = Permit({ loggedInUser, backendUrl });
+await permit.loadLocalStateBulk([...]);
+```
+
 For any questions, please reach out to us in
 the [Permit community](https://permit-io.slack.com/join/shared_invite/zt-nz6yjgnp-RlP9rtOPwO0n0aH_vLbmBQ).
