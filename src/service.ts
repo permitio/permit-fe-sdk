@@ -15,6 +15,7 @@ export const getBulkPermissionFromBE = async (
     resourceAttributes: actionResource.resourceAttributes || {},
   }));
 
+  // Exclude headers from axiosConfig - use customRequestHeaders instead (axiosConfig.headers is deprecated)
   const { headers: _, ...restAxiosConfig } = axiosConfig ?? {};
   const config: AxiosRequestConfig = {
     ...restAxiosConfig,
@@ -35,6 +36,7 @@ export const getPermissionFromBE = async (
   axiosConfig?: AxiosRequestConfig,
 ): Promise<boolean> => {
   const resourceKey = typeof resource === 'string' ? resource : `${resource.type}:${resource.key}`;
+  // Exclude headers from axiosConfig - use customRequestHeaders instead (axiosConfig.headers is deprecated)
   const { headers: _, ...restAxiosConfig } = axiosConfig ?? {};
   const config: AxiosRequestConfig = {
     ...restAxiosConfig,
