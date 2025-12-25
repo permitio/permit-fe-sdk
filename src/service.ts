@@ -15,10 +15,10 @@ export const getBulkPermissionFromBE = async (
     resourceAttributes: actionResource.resourceAttributes || {},
   }));
 
-  const { headers: axiosConfigHeaders, ...restAxiosConfig } = axiosConfig ?? {};
+  const { headers: _, ...restAxiosConfig } = axiosConfig ?? {};
   const config: AxiosRequestConfig = {
     ...restAxiosConfig,
-    headers: { ...axiosConfigHeaders, ...headers },
+    headers: headers ?? {},
   };
   return await axios.post(`${url}?user=${user}`, { resourcesAndActions: payload }, config).then((response) => {
     return response.data;
@@ -35,10 +35,10 @@ export const getPermissionFromBE = async (
   axiosConfig?: AxiosRequestConfig,
 ): Promise<boolean> => {
   const resourceKey = typeof resource === 'string' ? resource : `${resource.type}:${resource.key}`;
-  const { headers: axiosConfigHeaders, ...restAxiosConfig } = axiosConfig ?? {};
+  const { headers: _, ...restAxiosConfig } = axiosConfig ?? {};
   const config: AxiosRequestConfig = {
     ...restAxiosConfig,
-    headers: { ...axiosConfigHeaders, ...headers },
+    headers: headers ?? {},
   };
 
   return await axios
