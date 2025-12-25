@@ -85,7 +85,7 @@ const getBulkPermissionFromBE = async (
     userAttributes,
     resourceAttributes,
   }));
-  // Exclude headers from axiosConfig - use customRequestHeaders instead (axiosConfig.headers is deprecated)
+  // Exclude headers from axiosConfig for past compatibility.
   const { headers: _, ...restAxiosConfig } = axiosConfig ?? {};
   const config: AxiosRequestConfig = {
     ...restAxiosConfig,
@@ -105,7 +105,7 @@ const getPermissionFromBE = async (
   headers?: AxiosRequestHeaders,
   axiosConfig?: AxiosRequestConfig,
 ): Promise<boolean> => {
-  // Exclude headers from axiosConfig - use customRequestHeaders instead (axiosConfig.headers is deprecated)
+  // Exclude headers from axiosConfig for past compatibility.
   const { headers: _, ...restAxiosConfig } = axiosConfig ?? {};
   const config: AxiosRequestConfig = {
     ...restAxiosConfig,
