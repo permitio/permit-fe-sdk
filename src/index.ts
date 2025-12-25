@@ -70,8 +70,8 @@ export type PermitProps = {
    * Note: any `axiosConfig.headers` you pass here will be overridden by `customRequestHeaders`
    * (and the internal `headers` argument). For now, configure headers via `customRequestHeaders`;
    * in the next major version, headers will instead be read from `axiosConfig.headers`.
+   */
   axiosConfig?: AxiosRequestConfig;
-};
 };
 
 const getBulkPermissionFromBE = async (
