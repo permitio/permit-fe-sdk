@@ -41,6 +41,7 @@ jobs:
         run: npm run build
 
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        run: npm publish --access public
         # No NPM_TOKEN needed - uses OIDC Trusted Publishing
-        # Configure at: npmjs.com -> permit-fe-sdk -> Settings -> Trusted Publishers
+        # Provenance attestations are automatically generated with Trusted Publishing
+        # Configure at: npmjs.com -> permit-fe-sdk -> Settings -> Trusted Publishers.
