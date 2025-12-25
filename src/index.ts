@@ -67,8 +67,8 @@ export type PermitProps = {
   customRequestHeaders?: AxiosRequestHeaders;
   /**
    * Axios request configuration for advanced use cases like CORS credentials or timeouts.
-   * Note: any `axiosConfig.headers` you pass here will be overridden by `customRequestHeaders`
-   * (and the internal `headers` argument). For now, configure headers via `customRequestHeaders`;
+   * Note: any `axiosConfig.headers` you pass here will be overridden by `customRequestHeaders`.
+   * For now, configure headers via `customRequestHeaders`;
    * in the next major version, headers will instead be read from `axiosConfig.headers`.
    */
   axiosConfig?: AxiosRequestConfig;
