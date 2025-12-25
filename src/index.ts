@@ -50,11 +50,25 @@ export let permitCaslState: CaslPermissionSchema[] = [];
 let isInitialized = false;
 
 export type PermitProps = {
+  /** The unique identifier of the logged-in user for permission checks */
   loggedInUser: string;
+  /** Optional attributes associated with the user for ABAC policies */
   userAttributes?: Record<string, any>;
+  /** The URL of your backend permission check endpoint */
   backendUrl: string;
+  /** Default permission value when a check is not found in local state (default: false) */
   defaultAnswerIfNotExist?: boolean;
+  /**
+   * Custom headers to include in permission check requests.
+   * @deprecated This will be merged into `axiosConfig.headers` in the next major version.
+   * Please migrate to using `axiosConfig: { headers: {...} }` instead.
+   */
   customRequestHeaders?: AxiosRequestHeaders;
+  /**
+   * Axios request configuration for advanced use cases like CORS credentials or timeouts.
+   * Note: `axiosConfig.headers` is currently ignored - use `customRequestHeaders` for headers.
+   * In the next major version, headers will be configured via `axiosConfig.headers`.
+   */
   axiosConfig?: AxiosRequestConfig;
 };
 
@@ -128,6 +142,36 @@ const generateStateKey = (action: string, resource: string | ReBACResourceSchema
   return `user:${userAttributeKey};action:${action};resource:${resourceKey}${resourceAttributeKey}`;
 };
 
+/**
+ * Initialize the Permit SDK for frontend permission checks.
+ *
+ * @param props - Configuration options for the Permit SDK
+ * @param props.loggedInUser - The unique identifier of the logged-in user
+ * @param props.userAttributes - Optional attributes associated with the user for ABAC policies
+ * @param props.backendUrl - The URL of your backend permission check endpoint
+ * @param props.defaultAnswerIfNotExist - Default permission value when not found in state (default: false)
+ * @param props.customRequestHeaders - Custom headers for requests (deprecated: use axiosConfig.headers in next version)
+ * @param props.axiosConfig - Axios config for CORS credentials, timeouts, etc. (headers currently ignored)
+ * @returns The Permit state object with permission check methods
+ *
+ * @example
+ * ```typescript
+ * const permit = Permit({
+ *   loggedInUser: 'user-123',
+ *   backendUrl: '/api/permit-check',
+ *   axiosConfig: { withCredentials: true, timeout: 10000 },
+ * });
+ *
+ * await permit.loadLocalStateBulk([
+ *   { action: 'read', resource: 'document' },
+ *   { action: 'write', resource: 'document' },
+ * ]);
+ *
+ * if (permit.check('read', 'document')) {
+ *   // User has permission
+ * }
+ * ```
+ */
 export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultAnswerIfNotExist = false, customRequestHeaders, axiosConfig }: PermitProps) => {
   if (!loggedInUser) {
     throw new Error('loggedInUser is required');
