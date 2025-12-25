@@ -1,12 +1,18 @@
-import axios, { AxiosRequestHeaders } from 'axios';
+import axios, { AxiosRequestConfig, AxiosRequestHeaders } from 'axios';
 import { ActionResourceSchema, ReBACResourceSchema } from './types';
 import { permitState } from '.';
 
+/**
+ * Fetch permissions in bulk from the backend.
+ * @deprecated This function will be removed in the next major version.
+ * Use the `Permit` factory and its `loadLocalStateBulk` method instead.
+ */
 export const getBulkPermissionFromBE = async (
   url: string,
   user: string,
   actionsResourcesList: ActionResourceSchema[],
   headers?: AxiosRequestHeaders,
+  axiosConfig?: AxiosRequestConfig,
 ): Promise<boolean[]> => {
   const payload = actionsResourcesList.map((actionResource) => ({
     action: actionResource.action,
@@ -14,12 +20,22 @@ export const getBulkPermissionFromBE = async (
     resourceAttributes: actionResource.resourceAttributes || {},
   }));
 
-  const config = headers ? { headers } : {};
+  // Exclude headers from axiosConfig for past compatibility.
+  const { headers: _, ...restAxiosConfig } = axiosConfig ?? {};
+  const config: AxiosRequestConfig = {
+    ...restAxiosConfig,
+    headers: headers ?? {},
+  };
   return await axios.post(`${url}?user=${user}`, { resourcesAndActions: payload }, config).then((response) => {
     return response.data;
   });
 };
 
+/**
+ * Fetch a single permission from the backend.
+ * @deprecated This function will be removed in the next major version.
+ * Use the `Permit` factory and its `loadLocalState` or `addKeyToState` methods instead.
+ */
 export const getPermissionFromBE = async (
   url: string,
   user: string,
@@ -27,9 +43,15 @@ export const getPermissionFromBE = async (
   resource: string | ReBACResourceSchema,
   defaultPermission: boolean,
   headers?: AxiosRequestHeaders,
+  axiosConfig?: AxiosRequestConfig,
 ): Promise<boolean> => {
   const resourceKey = typeof resource === 'string' ? resource : `${resource.type}:${resource.key}`;
-  const config = headers ? { headers } : {};
+  // Exclude headers from axiosConfig for past compatibility.
+  const { headers: _, ...restAxiosConfig } = axiosConfig ?? {};
+  const config: AxiosRequestConfig = {
+    ...restAxiosConfig,
+    headers: headers ?? {},
+  };
 
   return await axios
     .get(`${url}?user=${user}&action=${action}&resource=${resourceKey}`, config)
@@ -46,6 +68,11 @@ export const getPermissionFromBE = async (
     });
 };
 
+/**
+ * Generate a unique key for storing permission state.
+ * @deprecated This internal utility will be removed in the next major version.
+ * Use the `Permit` factory methods which handle state management internally.
+ */
 export const generateStateKey = (action: string, resource: string | ReBACResourceSchema, resourceAttributes: Record<string, any> = {}) => {
   const sortedResourceAttributes = Object.keys(resourceAttributes)
     .sort()

@@ -1,4 +1,4 @@
-import axios, { AxiosRequestHeaders } from 'axios';
+import axios, { AxiosRequestConfig, AxiosRequestHeaders } from 'axios';
 
 // Interfaces
 
@@ -50,11 +50,28 @@ export let permitCaslState: CaslPermissionSchema[] = [];
 let isInitialized = false;
 
 export type PermitProps = {
+  /** The unique identifier of the logged-in user for permission checks */
   loggedInUser: string;
+  /** Optional attributes associated with the user for ABAC policies */
   userAttributes?: Record<string, any>;
+  /** The URL of your backend permission check endpoint */
   backendUrl: string;
+  /** Default permission value when a check is not found in local state (default: false) */
   defaultAnswerIfNotExist?: boolean;
+  /**
+   * Custom headers to include in permission check requests.
+   * @deprecated This option will be replaced by `axiosConfig.headers` in the next major version.
+   * For now, headers must still be provided via `customRequestHeaders`; `axiosConfig.headers` is
+   * currently ignored.
+   */
   customRequestHeaders?: AxiosRequestHeaders;
+  /**
+   * Axios request configuration for advanced use cases like CORS credentials or timeouts.
+   * Note: any `axiosConfig.headers` you pass here will be overridden by `customRequestHeaders`.
+   * For now, configure headers via `customRequestHeaders`;
+   * in the next major version, headers will instead be read from `axiosConfig.headers`.
+   */
+  axiosConfig?: AxiosRequestConfig;
 };
 
 const getBulkPermissionFromBE = async (
@@ -62,6 +79,7 @@ const getBulkPermissionFromBE = async (
   user: string,
   actionsResourcesList: ActionResourceSchema[],
   headers?: AxiosRequestHeaders,
+  axiosConfig?: AxiosRequestConfig,
 ): Promise<boolean[]> => {
   const payload = actionsResourcesList.map(({ action, resource, userAttributes = {}, resourceAttributes = {} }) => ({
     action,
@@ -69,7 +87,12 @@ const getBulkPermissionFromBE = async (
     userAttributes,
     resourceAttributes,
   }));
-  const config = headers ? { headers } : {};
+  // Exclude headers from axiosConfig for past compatibility.
+  const { headers: _, ...restAxiosConfig } = axiosConfig ?? {};
+  const config: AxiosRequestConfig = {
+    ...restAxiosConfig,
+    headers: headers ?? {},
+  };
 
   const response = await axios.post(`${url}?user=${user}`, { resourcesAndActions: payload }, config);
   return response.data.permittedList;
@@ -82,8 +105,14 @@ const getPermissionFromBE = async (
   resource: string,
   defaultPermission: boolean,
   headers?: AxiosRequestHeaders,
+  axiosConfig?: AxiosRequestConfig,
 ): Promise<boolean> => {
-  const config = headers ? { headers } : {};
+  // Exclude headers from axiosConfig for past compatibility.
+  const { headers: _, ...restAxiosConfig } = axiosConfig ?? {};
+  const config: AxiosRequestConfig = {
+    ...restAxiosConfig,
+    headers: headers ?? {},
+  };
   return await axios
     .get(`${url}?user=${user}&action=${action}&resource=${resource}`, config)
     .then((response) => {
@@ -117,7 +146,37 @@ const generateStateKey = (action: string, resource: string | ReBACResourceSchema
   return `user:${userAttributeKey};action:${action};resource:${resourceKey}${resourceAttributeKey}`;
 };
 
-export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultAnswerIfNotExist = false, customRequestHeaders }: PermitProps) => {
+/**
+ * Initialize the Permit SDK for frontend permission checks.
+ *
+ * @param props - Configuration options for the Permit SDK
+ * @param props.loggedInUser - The unique identifier of the logged-in user
+ * @param props.userAttributes - Optional attributes associated with the user for ABAC policies
+ * @param props.backendUrl - The URL of your backend permission check endpoint
+ * @param props.defaultAnswerIfNotExist - Default permission value when not found in state (default: false)
+ * @param props.customRequestHeaders - Custom headers for requests (deprecated: use axiosConfig.headers in next version)
+ * @param props.axiosConfig - Axios config for CORS credentials, timeouts, etc. (headers currently ignored)
+ * @returns The Permit state object with permission check methods.
+ *
+ * @example
+ * ```typescript
+ * const permit = Permit({
+ *   loggedInUser: 'user-123',
+ *   backendUrl: '/api/permit-check',
+ *   axiosConfig: { withCredentials: true, timeout: 10000 },
+ * });
+ *
+ * await permit.loadLocalStateBulk([
+ *   { action: 'read', resource: 'document' },
+ *   { action: 'write', resource: 'document' },
+ * ]);
+ *
+ * if (permit.check('read', 'document')) {
+ *   // User has permission
+ * }
+ * ```
+ */
+export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultAnswerIfNotExist = false, customRequestHeaders, axiosConfig }: PermitProps) => {
   if (!loggedInUser) {
     throw new Error('loggedInUser is required');
   }
@@ -142,7 +201,15 @@ export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultA
     for (const actionResource of actionsResourcesList) {
       const resourceKey =
         typeof actionResource.resource === 'string' ? actionResource.resource : `${actionResource.resource.type}:${actionResource.resource.key}`;
-      const permission = await getPermissionFromBE(backendUrl, loggedInUser, actionResource.action, resourceKey, defaultAnswerIfNotExist, customRequestHeaders);
+      const permission = await getPermissionFromBE(
+        backendUrl,
+        loggedInUser,
+        actionResource.action,
+        resourceKey,
+        defaultAnswerIfNotExist,
+        customRequestHeaders,
+        axiosConfig,
+      );
       await updatePermissionState(actionResource, permission);
     }
   };
@@ -150,7 +217,7 @@ export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultA
   const loadLocalStateBulk = async (actionsResourcesList: ActionResourceSchema[]) => {
     if (isInitialized) return;
     isInitialized = true;
-    const permittedList = await getBulkPermissionFromBE(backendUrl, loggedInUser, actionsResourcesList, customRequestHeaders);
+    const permittedList = await getBulkPermissionFromBE(backendUrl, loggedInUser, actionsResourcesList, customRequestHeaders, axiosConfig);
     for (const [i, actionResource] of actionsResourcesList.entries()) {
       await updatePermissionState(actionResource, permittedList[i]);
     }
@@ -167,7 +234,7 @@ export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultA
 
   const addKeyToState = async (action: string, resource: string | ReBACResourceSchema, resourceAttributes: Record<string, any> = {}) => {
     const resourceKey = typeof resource === 'string' ? resource : `${resource.type}:${resource.key}`;
-    const permission = await getPermissionFromBE(backendUrl, loggedInUser, action, resourceKey, defaultAnswerIfNotExist, customRequestHeaders);
+    const permission = await getPermissionFromBE(backendUrl, loggedInUser, action, resourceKey, defaultAnswerIfNotExist, customRequestHeaders, axiosConfig);
     await updatePermissionState({ action, resource, userAttributes: permitState.userAttributes, resourceAttributes }, permission);
   };
 
