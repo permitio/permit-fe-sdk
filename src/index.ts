@@ -152,7 +152,7 @@ const generateStateKey = (action: string, resource: string | ReBACResourceSchema
  * @param props.defaultAnswerIfNotExist - Default permission value when not found in state (default: false)
  * @param props.customRequestHeaders - Custom headers for requests (deprecated: use axiosConfig.headers in next version)
  * @param props.axiosConfig - Axios config for CORS credentials, timeouts, etc. (headers currently ignored)
- * @returns The Permit state object with permission check methods
+ * @returns The Permit state object with permission check methods.
  *
  * @example
  * ```typescript
