@@ -60,16 +60,18 @@ export type PermitProps = {
   defaultAnswerIfNotExist?: boolean;
   /**
    * Custom headers to include in permission check requests.
-   * @deprecated This will be merged into `axiosConfig.headers` in the next major version.
-   * Please migrate to using `axiosConfig: { headers: {...} }` instead.
+   * @deprecated This option will be replaced by `axiosConfig.headers` in the next major version.
+   * For now, headers must still be provided via `customRequestHeaders`; `axiosConfig.headers` is
+   * currently ignored.
    */
   customRequestHeaders?: AxiosRequestHeaders;
   /**
    * Axios request configuration for advanced use cases like CORS credentials or timeouts.
-   * Note: `axiosConfig.headers` is currently ignored - use `customRequestHeaders` for headers.
-   * In the next major version, headers will be configured via `axiosConfig.headers`.
-   */
+   * Note: any `axiosConfig.headers` you pass here will be overridden by `customRequestHeaders`
+   * (and the internal `headers` argument). For now, configure headers via `customRequestHeaders`;
+   * in the next major version, headers will instead be read from `axiosConfig.headers`.
   axiosConfig?: AxiosRequestConfig;
+};
 };
 
 const getBulkPermissionFromBE = async (
