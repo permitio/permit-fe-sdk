@@ -8,6 +8,9 @@ jobs:
   release:
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      contents: read
+      id-token: write # Required for npm Trusted Publishing (OIDC)
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -15,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Extract version from release tag
@@ -38,7 +41,6 @@ jobs:
         run: npm run build
 
       - name: Publish to npm
-        run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
+        run: npm publish --provenance --access public
+        # No NPM_TOKEN needed - uses OIDC Trusted Publishing
+        # Configure at: npmjs.com -> permit-fe-sdk -> Settings -> Trusted Publishers
