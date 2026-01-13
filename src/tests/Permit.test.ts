@@ -19,6 +19,7 @@ describe('Permit Factory - POST Method Support', () => {
         backendUrl: 'http://example.com',
       });
 
+      permit.reset();
       await permit.loadLocalState(
         [
           {
@@ -52,6 +53,7 @@ describe('Permit Factory - POST Method Support', () => {
         backendUrl: 'http://example.com',
       });
 
+      permit.reset();
       await permit.loadLocalState([{ action: 'read', resource: 'file' }], 'POST');
 
       expect(permit.check('read', 'file', {})).toBe(false);
@@ -67,6 +69,7 @@ describe('Permit Factory - POST Method Support', () => {
         defaultAnswerIfNotExist: true,
       });
 
+      permit.reset();
       await permit.loadLocalState([{ action: 'read', resource: 'file' }], 'POST');
 
       expect(permit.check('read', 'file', {})).toBe(true);
