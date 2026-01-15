@@ -21,7 +21,6 @@ export interface PermitCheckSchema {
   addKeyToState: (
     action: string,
     resource: string | ReBACResourceSchema,
-    userAttributes?: Record<string, any>,
     resourceAttributes?: Record<string, any>,
     method?: HttpMethod,
   ) => Promise<void>;
@@ -116,9 +115,9 @@ const getPermissionFromBE = async (
   defaultPermission: boolean,
   headers?: AxiosRequestHeaders,
   axiosConfig?: AxiosRequestConfig,
-  method: HttpMethod = 'GET',
-  userAttributes: Record<string, any> = {},
-  resourceAttributes: Record<string, any> = {},
+  method?: HttpMethod,
+  userAttributes?: Record<string, any>,
+  resourceAttributes?: Record<string, any>,
 ): Promise<boolean> => {
   // Exclude headers from axiosConfig for past compatibility.
   const { headers: _, ...restAxiosConfig } = axiosConfig ?? {};
@@ -131,8 +130,8 @@ const getPermissionFromBE = async (
     const payload = {
       action,
       resource,
-      userAttributes,
-      resourceAttributes,
+      userAttributes: userAttributes ?? {},
+      resourceAttributes: resourceAttributes ?? {},
     };
     try {
       const response = await axios.post(`${url}?user=${user}`, payload, config);
@@ -272,15 +271,12 @@ export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultA
     return permitLocalState[key] ?? defaultAnswerIfNotExist;
   };
 
-  /* tslint:disable:no-shadowed-variable */
   const addKeyToState = async (
     action: string,
     resource: string | ReBACResourceSchema,
-    userAttributes?: Record<string, any>,
     resourceAttributes?: Record<string, any>,
-    method: HttpMethod = 'GET',
+    method?: HttpMethod,
   ) => {
-    /* tslint:enable:no-shadowed-variable */
     const resourceKey = typeof resource === 'string' ? resource : `${resource.type}:${resource.key}`;
     const permission = await getPermissionFromBE(
       backendUrl,
