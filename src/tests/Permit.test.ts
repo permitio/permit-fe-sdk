@@ -84,10 +84,11 @@ describe('Permit Factory - POST Method Support', () => {
       const permit = Permit({
         loggedInUser: 'user1',
         backendUrl: 'http://example.com',
+        userAttributes: { department: 'Engineering' },
       });
 
       permit.reset();
-      await permit.addKeyToState('read', 'file', { department: 'Engineering' }, { country: 'PL' }, 'POST');
+      await permit.addKeyToState('read', 'file', { country: 'PL' }, 'POST');
 
       expect(mockedAxios.post).toHaveBeenCalledWith(
         'http://example.com?user=user1',
