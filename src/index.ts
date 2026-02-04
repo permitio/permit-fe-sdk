@@ -22,6 +22,7 @@ export interface PermitCheckSchema {
     action: string,
     resource: string | ReBACResourceSchema,
     resourceAttributes?: Record<string, any>,
+    userAttributes?: Record<string, any>,
     method?: HttpMethod,
   ) => Promise<void>;
   loadLocalState: (actionsResourcesList: ActionResourceSchema[], method?: HttpMethod) => Promise<void>;
@@ -275,9 +276,12 @@ export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultA
     action: string,
     resource: string | ReBACResourceSchema,
     resourceAttributes?: Record<string, any>,
+    userAttributesParam?: Record<string, any>,
     method?: HttpMethod,
   ) => {
     const resourceKey = typeof resource === 'string' ? resource : `${resource.type}:${resource.key}`;
+    // Allow overwrite by addKeyToState.
+    const finalUserAttributes = userAttributesParam ?? userAttributes;
     const permission = await getPermissionFromBE(
       backendUrl,
       loggedInUser,
@@ -287,10 +291,10 @@ export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultA
       customRequestHeaders,
       axiosConfig,
       method,
-      userAttributes,
+      finalUserAttributes,
       resourceAttributes,
     );
-    await updatePermissionState({ action, resource, userAttributes, resourceAttributes }, permission);
+    await updatePermissionState({ action, resource, userAttributes: finalUserAttributes, resourceAttributes }, permission);
   };
 
   const reset = () => {

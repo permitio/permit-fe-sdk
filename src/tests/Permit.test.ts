@@ -88,7 +88,7 @@ describe('Permit Factory - POST Method Support', () => {
       });
 
       permit.reset();
-      await permit.addKeyToState('read', 'file', { country: 'PL' }, 'POST');
+      await permit.addKeyToState('read', 'file', { country: 'PL' }, { department: 'Engineering' }, 'POST');
 
       expect(mockedAxios.post).toHaveBeenCalledWith(
         'http://example.com?user=user1',
