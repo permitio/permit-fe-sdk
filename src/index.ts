@@ -1,5 +1,14 @@
 import axios, { AxiosRequestConfig, AxiosRequestHeaders } from 'axios';
 
+// Types
+
+/**
+ * HTTP method type for permission check requests.
+ * - 'GET': Traditional permission check without attributes in the body
+ * - 'POST': ABAC-enabled permission check with user and resource attributes in the request body
+ */
+export type HttpMethod = 'GET' | 'POST';
+
 // Interfaces
 
 export interface PermitCheckSchema {
@@ -12,10 +21,11 @@ export interface PermitCheckSchema {
   addKeyToState: (
     action: string,
     resource: string | ReBACResourceSchema,
-    userAttributes: Record<string, any>,
     resourceAttributes?: Record<string, any>,
+    userAttributes?: Record<string, any>,
+    method?: HttpMethod,
   ) => Promise<void>;
-  loadLocalState: (actionsResourcesList: ActionResourceSchema[]) => Promise<void>;
+  loadLocalState: (actionsResourcesList: ActionResourceSchema[], method?: HttpMethod) => Promise<void>;
   getCaslJson: () => CaslPermissionSchema[];
   loadLocalStateBulk: (actionsResourcesList: ActionResourceSchema[]) => Promise<void>;
   reset: () => void;
@@ -106,6 +116,9 @@ const getPermissionFromBE = async (
   defaultPermission: boolean,
   headers?: AxiosRequestHeaders,
   axiosConfig?: AxiosRequestConfig,
+  method?: HttpMethod,
+  userAttributes?: Record<string, any>,
+  resourceAttributes?: Record<string, any>,
 ): Promise<boolean> => {
   // Exclude headers from axiosConfig for past compatibility.
   const { headers: _, ...restAxiosConfig } = axiosConfig ?? {};
@@ -113,13 +126,37 @@ const getPermissionFromBE = async (
     ...restAxiosConfig,
     headers: headers ?? {},
   };
+
+  if (method === 'POST') {
+    const payload = {
+      action,
+      resource,
+      userAttributes: userAttributes ?? {},
+      resourceAttributes: resourceAttributes ?? {},
+    };
+    try {
+      const response = await axios.post(`${url}?user=${user}`, payload, config);
+      return response.data.permitted;
+    } catch (error: any) {
+      if (error.response?.status === 403) {
+        return false;
+      }
+      // tslint:disable-next-line:no-console
+      console.error(error);
+      return defaultPermission;
+    }
+  }
+
+  // GET (existing behavior)
+  // Note: When using GET method, userAttributes and resourceAttributes are not sent.
+  // If you need to pass attributes for ABAC evaluation, use method: 'POST'.
   return await axios
     .get(`${url}?user=${user}&action=${action}&resource=${resource}`, config)
     .then((response) => {
       return response.data.permitted;
     })
     .catch((error) => {
-      if (error.response.status === 403) {
+      if (error.response?.status === 403) {
         return false;
       }
       // tslint:disable-next-line:no-console
@@ -195,7 +232,7 @@ export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultA
     });
   };
 
-  const loadLocalState = async (actionsResourcesList: ActionResourceSchema[]) => {
+  const loadLocalState = async (actionsResourcesList: ActionResourceSchema[], method: HttpMethod = 'GET') => {
     if (isInitialized) return;
     isInitialized = true;
     for (const actionResource of actionsResourcesList) {
@@ -209,6 +246,9 @@ export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultA
         defaultAnswerIfNotExist,
         customRequestHeaders,
         axiosConfig,
+        method,
+        actionResource.userAttributes,
+        actionResource.resourceAttributes,
       );
       await updatePermissionState(actionResource, permission);
     }
@@ -232,10 +272,29 @@ export const Permit = ({ loggedInUser, userAttributes = {}, backendUrl, defaultA
     return permitLocalState[key] ?? defaultAnswerIfNotExist;
   };
 
-  const addKeyToState = async (action: string, resource: string | ReBACResourceSchema, resourceAttributes: Record<string, any> = {}) => {
+  const addKeyToState = async (
+    action: string,
+    resource: string | ReBACResourceSchema,
+    resourceAttributes?: Record<string, any>,
+    userAttributesParam?: Record<string, any>,
+    method?: HttpMethod,
+  ) => {
     const resourceKey = typeof resource === 'string' ? resource : `${resource.type}:${resource.key}`;
-    const permission = await getPermissionFromBE(backendUrl, loggedInUser, action, resourceKey, defaultAnswerIfNotExist, customRequestHeaders, axiosConfig);
-    await updatePermissionState({ action, resource, userAttributes: permitState.userAttributes, resourceAttributes }, permission);
+    // Allow overwrite by addKeyToState.
+    const finalUserAttributes = userAttributesParam ?? userAttributes;
+    const permission = await getPermissionFromBE(
+      backendUrl,
+      loggedInUser,
+      action,
+      resourceKey,
+      defaultAnswerIfNotExist,
+      customRequestHeaders,
+      axiosConfig,
+      method,
+      finalUserAttributes,
+      resourceAttributes,
+    );
+    await updatePermissionState({ action, resource, userAttributes: finalUserAttributes, resourceAttributes }, permission);
   };
 
   const reset = () => {
