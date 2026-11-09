@@ -42,7 +42,6 @@ yarn add permit-fe-sdk
 #### Available Demo Apps
 
 - **React**: Check out the [demo app for React](https://github.com/permitio/fe-demo-react).
-- **Angular**: Refer to the [demo app for Angular](https://github.com/permitio/fe-demo-angular).
 
 #### Integration with Other Frontend Frameworks
 
